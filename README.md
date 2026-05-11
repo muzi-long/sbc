@@ -1,0 +1,2 @@
+# sbc
+kamailio rtpengin sbc
