@@ -20,30 +20,53 @@
 
 ## 2. 仓库布局
 
-所有产物统一放在仓库根目录 `install/` 下:
+按"服务"分模块化,主入口只负责解析参数和分派,未来新增服务(如 freeswitch)只需加一个 `services/<name>.sh` + 对应的 `conf/<name>/` 和 `systemd/`,主入口零改动:
 
 ```
 sbc/
 └── install/
-    ├── install.sh                                       # 主入口,含必填变量区
+    ├── install.sh                                       # 主入口:解析参数,dispatch
+    ├── lib/
+    │   └── common.sh                                    # 共享:OS 校验、apt key、变量校验、健康检查
+    ├── services/
+    │   ├── kamailio.sh                                  # do_install / do_reconfigure / do_health
+    │   └── rtpengine.sh                                 # 同上
     ├── conf/
-    │   ├── kamailio.cfg.tpl                             # 占位符化的模板
-    │   ├── kamailio.lua                                 # 原样拷贝(业务逻辑,不参数化)
-    │   ├── dispatcher.list                              # 原样拷贝(默认两条对端)
-    │   └── rtpengine.conf.tpl                           # 占位符化的模板
+    │   ├── kamailio/
+    │   │   ├── kamailio.cfg.tpl                         # 占位符化的模板
+    │   │   ├── kamailio.lua                             # 原样拷贝(业务逻辑)
+    │   │   └── dispatcher.list                          # 原样拷贝(默认两条对端)
+    │   └── rtpengine/
+    │       └── rtpengine.conf.tpl                       # 占位符化的模板
     └── systemd/
         ├── kamailio.service.d/override.conf
         └── rtpengine-daemon.service.d/override.conf
 ```
 
+每个 `services/<name>.sh` 暴露固定接口供主入口调用:
+
+- `do_install` — 执行该服务的完整 install 步骤
+- `do_reconfigure` — 仅重渲配置 + 重启
+- `do_health` — 健康摘要
+
 ## 3. 调用约定
 
+服务名以**位置参数**列在子命令后面;不传服务名 = 操作所有已知服务。**不做服务间依赖校验**(传什么操作什么)。
+
 ```bash
-sudo ./install/install.sh install       # 默认:全量安装
-sudo ./install/install.sh reconfigure   # 不动包,只重新渲染配置 + 重启服务
+# install:不传 = 全装;传服务名 = 只装这些
+sudo ./install/install.sh install                       # 装所有已知服务
+sudo ./install/install.sh install kamailio rtpengine    # 显式两个
+sudo ./install/install.sh install rtpengine             # 只装 rtpengine
+
+# reconfigure:不传 = 重渲所有;传服务名 = 只重渲这些
+sudo ./install/install.sh reconfigure
+sudo ./install/install.sh reconfigure kamailio
+
+# 不传子命令时报错,而非默认 install(避免误操作)
 ```
 
-未传子命令时等同 `install`。
+未知服务名报错列出已知服务名后退出。已知服务名由 `services/` 目录里的文件名决定。
 
 ## 4. 必填变量(脚本头部)
 
@@ -88,6 +111,8 @@ RTPENGINE_RELEASE="mr12.5.1"
 - 任意一步失败立即停,打印失败行号
 
 ## 6. install 模式步骤
+
+主入口先做全局前置(6.1),再对参数中列出(或默认全部)的每个服务依次调用 `services/<name>.sh::do_install`。下面列的步骤即一个服务模块内部的执行顺序。
 
 按顺序执行,任一步骤失败即终止:
 
@@ -223,13 +248,15 @@ __RTPE_PORT_MAX__
 
 ## 7. reconfigure 模式步骤
 
-跳过 6.2–6.6,只执行:
+主入口对参数中列出(或默认全部)的每个服务依次调用 `services/<name>.sh::do_reconfigure`。每个服务模块内部:
 
 1. 6.1 前置检查(变量、网卡)
-2. 6.7 渲染配置
-3. 6.8 daemon-reload(drop-in 也重新拷贝,允许同时改 unit)
-4. `systemctl restart rtpengine-daemon kamailio`
-5. 6.10 健康摘要
+2. 6.7 渲染该服务的配置
+3. 6.8 重拷该服务的 drop-in + `systemctl daemon-reload`
+4. `systemctl restart <该服务的 unit>`
+5. 6.10 该服务的健康摘要
+
+注:reconfigure 只重启被列出的服务;若同时改了多个服务且有相互依赖,你需自行控制顺序(如先 `reconfigure rtpengine` 再 `reconfigure kamailio`)。
 
 ## 8. systemd drop-in 内容
 
@@ -288,6 +315,7 @@ boot
 - 不处理 kamailio 数据库 schema(由现有 DB 提供)
 - 不容错降级(严格失败 + 退出)
 - 不交互式询问参数(全部走脚本头部变量)
+- 不做服务间依赖校验(传什么装什么,如只装 kamailio 不装 rtpengine,kamailio 启动后媒体会不可用,由用户自行保证依赖关系)
 
 ## 11. 可能的失败点与对策
 
