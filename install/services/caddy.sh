@@ -27,8 +27,9 @@ _caddy_check_vars() {
 
 _caddy_add_repo() {
   install -d -m 0755 /etc/apt/keyrings
+  rm -f /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-    | gpg --batch --no-tty --dearmor -o /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
+    | gpg --batch --no-tty --yes --dearmor -o /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
   chmod 0644 /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
     > /etc/apt/sources.list.d/caddy-stable.list

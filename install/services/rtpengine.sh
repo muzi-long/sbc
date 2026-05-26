@@ -24,8 +24,9 @@ _rtpe_check_vars() {
 
 _rtpe_add_repo() {
   install -d -m 0755 /etc/apt/keyrings
+  rm -f /etc/apt/keyrings/sipwise.gpg
   wget -qO- 'https://deb.sipwise.com/spce/keyring/sipwise-keyring-bootstrap.gpg' \
-    | gpg --batch --no-tty --dearmor -o /etc/apt/keyrings/sipwise.gpg
+    | gpg --batch --no-tty --yes --dearmor -o /etc/apt/keyrings/sipwise.gpg
   chmod 0644 /etc/apt/keyrings/sipwise.gpg
   # sipwise spce/mr12.5.1 只发布 Debian 12 (bookworm) 仓库,没有 Ubuntu codename。
   # Ubuntu 上直接用 bookworm 源:ngcp-rtpengine 的 ABI 主要依赖 glibc 和内核,
