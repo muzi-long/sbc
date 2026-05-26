@@ -1,3 +1,6 @@
 tests/bats/.bats-tmp/
 tests/bats/lib/
 install/install.env
+
+# Claude Code 本地个人偏好(权限白名单等),团队共享版应放在 .claude/settings.json
+.claude/settings.local.json
