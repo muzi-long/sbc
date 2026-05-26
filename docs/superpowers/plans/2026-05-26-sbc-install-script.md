@@ -174,12 +174,13 @@ EOF
 }
 
 @test "require_root passes when EUID=0" {
-  EUID=0 run require_root
+  # bash 中 EUID 是 readonly,用 _EUID_OVERRIDE 测试注入点
+  _EUID_OVERRIDE=0 run require_root
   [ "$status" -eq 0 ]
 }
 
 @test "require_root fails when EUID!=0" {
-  EUID=1000 run require_root
+  _EUID_OVERRIDE=1000 run require_root
   [ "$status" -ne 0 ]
   [[ "$output" == *"root"* ]]
 }
@@ -201,7 +202,8 @@ Expected: `detect_ubuntu: command not found` 类失败
 set -o pipefail
 
 require_root() {
-  if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+  # _EUID_OVERRIDE 仅供 bats 单测注入(bash 中 EUID 是 readonly)
+  if [ "${_EUID_OVERRIDE:-${EUID:-$(id -u)}}" -ne 0 ]; then
     echo "ERROR: 必须以 root 运行(sudo)" >&2
     return 1
   fi
