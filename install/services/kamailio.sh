@@ -71,7 +71,8 @@ _kam_install_pkgs() {
     kamailio-json-modules \
     kamailio-xmpp-modules \
     kamailio-utils-modules \
-    kamailio-extra-modules
+    kamailio-extra-modules \
+    kamailio-lua-modules
   # /etc/default/kamailio 的坑(Ubuntu 22.04 包):
   # - 默认 RUN_KAMAILIO=no(systemd unit 不检查这个,但 init.d 检查)
   # - 默认**没有** CFGFILE / SHM_MEMORY / PKG_MEMORY,而 systemd ExecStart 引用了它们
