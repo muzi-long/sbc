@@ -59,6 +59,40 @@ _fs_git_clone_retry() {
   return 1
 }
 
+# 带重试的 tarball 下载并解压(GitHub release/archive 比 git clone 快 5-10 倍,
+# 国内访问 freeswitch 主仓库 ~700MB 的 git history 极慢且容易挂)。
+# 用法:_fs_tarball_fetch_retry DST_DIR URL TOPDIR
+# DST_DIR:最终源码目录;URL:tarball 地址;TOPDIR:tarball 解压后的顶层目录名
+_fs_tarball_fetch_retry() {
+  local dst="$1" url="$2" topdir="$3"
+  local n=0 max=5
+  if [ -d "$dst" ] && [ "$(ls -A "$dst" 2>/dev/null)" ]; then
+    return 0
+  fi
+  rm -rf "$dst"
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  while [ "$n" -lt "$max" ]; do
+    n=$((n+1))
+    if wget --timeout=60 --tries=1 -qO "$tmpdir/src.tar.gz" "$url"; then
+      if tar -xzf "$tmpdir/src.tar.gz" -C "$tmpdir"; then
+        if [ -d "$tmpdir/$topdir" ]; then
+          mv "$tmpdir/$topdir" "$dst"
+          rm -rf "$tmpdir"
+          return 0
+        fi
+        echo "[freeswitch] tarball 解压后未找到 $topdir,实际:$(ls "$tmpdir")" >&2
+      fi
+    fi
+    echo "[freeswitch] 下载 $url 失败(第 $n/$max 次),5 秒后重试..." >&2
+    rm -f "$tmpdir/src.tar.gz"
+    sleep 5
+  done
+  rm -rf "$tmpdir"
+  echo "ERROR: 下载 $url 重试 $max 次仍失败" >&2
+  return 1
+}
+
 # 源码编译(幂等:freeswitch 二进制已存在则跳过)
 _fs_build_from_source() {
   if [ -x "$FS_PREFIX/bin/freeswitch" ]; then
@@ -88,8 +122,13 @@ _fs_build_from_source() {
   _fs_git_clone_retry "$FS_BUILD_DIR/signalwire-c" https://github.com/signalwire/signalwire-c.git v1.3.3
   ( cd "$FS_BUILD_DIR/signalwire-c" && cmake . && make && make install && ldconfig )
 
-  # freeswitch 主体 v1.10.12
-  _fs_git_clone_retry "$FS_BUILD_DIR/freeswitch" https://github.com/signalwire/freeswitch.git "$FS_VERSION"
+  # freeswitch 主体 v1.10.12 — 用 tarball 下载(git clone ~700MB 在国内极慢易挂,
+  # tarball ~80MB,快 5-10 倍)。FreeSWITCH 主体的 bootstrap.sh 不依赖 git 历史。
+  # 注意:tag 形如 v1.10.12,GitHub archive 解压后顶层目录是 freeswitch-1.10.12(去 v)
+  local fs_tag_no_v="${FS_VERSION#v}"
+  _fs_tarball_fetch_retry "$FS_BUILD_DIR/freeswitch" \
+    "https://github.com/signalwire/freeswitch/archive/refs/tags/${FS_VERSION}.tar.gz" \
+    "freeswitch-${fs_tag_no_v}"
   (
     cd "$FS_BUILD_DIR/freeswitch"
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:${PKG_CONFIG_PATH:-}
