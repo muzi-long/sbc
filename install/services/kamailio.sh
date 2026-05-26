@@ -57,7 +57,7 @@ _kam_add_repo() {
   cat > /etc/apt/sources.list.d/kamailio.list <<EOF
 deb [signed-by=/etc/apt/keyrings/kamailio.gpg] http://deb.kamailio.org/kamailio${KAMAILIO_BRANCH} ${UBUNTU_CODENAME} main
 EOF
-  apt-get update
+  apt-get update -o Dir::Etc::sourcelist="sources.list.d/kamailio.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
 }
 
 _kam_install_pkgs() {
@@ -119,8 +119,7 @@ do_install() {
   _kam_render
   _kam_install_dropin
   systemctl enable --now kamailio
-  sleep 3  # 等待 kamailio 完成初始化
-  systemctl is-active kamailio >/dev/null || {
+  wait_for_active kamailio 30 || {
     journalctl -u kamailio -n 50 --no-pager >&2
     return 1
   }
@@ -133,8 +132,7 @@ do_reconfigure() {
   _kam_render
   _kam_install_dropin
   systemctl restart kamailio
-  sleep 2  # 等待 kamailio reload 完成
-  systemctl is-active kamailio >/dev/null || {
+  wait_for_active kamailio 30 || {
     journalctl -u kamailio -n 50 --no-pager >&2
     return 1
   }

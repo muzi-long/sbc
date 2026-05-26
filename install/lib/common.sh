@@ -108,3 +108,20 @@ render_tpl() {
     return 1
   fi
 }
+
+# wait_for_active UNIT [TIMEOUT_SECONDS]
+# 轮询 systemctl is-active,超时返回非零
+# 默认 timeout 15 秒
+wait_for_active() {
+  local unit="$1"
+  local timeout="${2:-15}"
+  local i=0
+  while [ "$i" -lt "$timeout" ]; do
+    if systemctl is-active "$unit" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+    i=$((i+1))
+  done
+  return 1
+}

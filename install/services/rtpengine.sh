@@ -30,7 +30,7 @@ _rtpe_add_repo() {
   cat > /etc/apt/sources.list.d/sipwise.list <<EOF
 deb [signed-by=/etc/apt/keyrings/sipwise.gpg] https://deb.sipwise.com/spce/${RTPENGINE_RELEASE}/ ${UBUNTU_CODENAME} main
 EOF
-  apt-get update
+  apt-get update -o Dir::Etc::sourcelist="sources.list.d/sipwise.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
   if ! apt-cache madison ngcp-rtpengine | grep -q .; then
     echo "ERROR: sipwise 仓库在 codename=${UBUNTU_CODENAME}、release=${RTPENGINE_RELEASE} 下没有 ngcp-rtpengine 包" >&2
     return 1
@@ -87,8 +87,7 @@ do_install() {
   _rtpe_render
   _rtpe_install_dropin
   systemctl enable --now rtpengine-daemon
-  sleep 3  # 等待 rtpengine 完成初始化
-  systemctl is-active rtpengine-daemon >/dev/null || {
+  wait_for_active rtpengine-daemon 15 || {
     lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
     journalctl -u rtpengine-daemon -n 50 --no-pager >&2
     return 1
@@ -101,8 +100,7 @@ do_reconfigure() {
   _rtpe_render
   _rtpe_install_dropin
   systemctl restart rtpengine-daemon
-  sleep 2  # 等待 rtpengine reload 完成
-  systemctl is-active rtpengine-daemon >/dev/null || {
+  wait_for_active rtpengine-daemon 15 || {
     lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
     journalctl -u rtpengine-daemon -n 50 --no-pager >&2
     return 1
