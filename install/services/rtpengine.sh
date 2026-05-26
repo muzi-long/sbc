@@ -27,12 +27,15 @@ _rtpe_add_repo() {
   wget -qO- 'https://deb.sipwise.com/spce/keyring/sipwise-keyring-bootstrap.gpg' \
     | gpg --dearmor -o /etc/apt/keyrings/sipwise.gpg
   chmod 0644 /etc/apt/keyrings/sipwise.gpg
+  # sipwise spce/mr12.5.1 只发布 Debian 12 (bookworm) 仓库,没有 Ubuntu codename。
+  # Ubuntu 上直接用 bookworm 源:ngcp-rtpengine 的 ABI 主要依赖 glibc 和内核,
+  # 在 Ubuntu 22.04/24.04 上实测可用;xt_RTPENGINE 由 DKMS 编译,与发行版无关。
   cat > /etc/apt/sources.list.d/sipwise.list <<EOF
-deb [signed-by=/etc/apt/keyrings/sipwise.gpg] https://deb.sipwise.com/spce/${RTPENGINE_RELEASE}/ ${UBUNTU_CODENAME} main
+deb [signed-by=/etc/apt/keyrings/sipwise.gpg] https://deb.sipwise.com/spce/${RTPENGINE_RELEASE}/ bookworm main
 EOF
   apt-get update -o Dir::Etc::sourcelist="sources.list.d/sipwise.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
   if ! apt-cache madison ngcp-rtpengine | grep -q .; then
-    echo "ERROR: sipwise 仓库在 codename=${UBUNTU_CODENAME}、release=${RTPENGINE_RELEASE} 下没有 ngcp-rtpengine 包" >&2
+    echo "ERROR: sipwise 仓库 (release=${RTPENGINE_RELEASE}, bookworm) 没有 ngcp-rtpengine 包" >&2
     return 1
   fi
 }

@@ -71,6 +71,9 @@ docs/superpowers/{specs,plans,checklists}/
 ### apt 源密钥
 全部走 `signed-by=/etc/apt/keyrings/<name>.gpg`,**不**用废弃的 `apt-key`。每个 `_<svc>_add_repo` 末尾用 `apt-get update -o Dir::Etc::sourcelist="sources.list.d/<file>.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"` 只刷新自己新加的源(避免多 service 全装时重复 update)。
 
+### sipwise 源固定用 `bookworm`,不要跟 UBUNTU_CODENAME
+sipwise `spce/mr12.5.1` 仓库**只发布 Debian 12 (bookworm) 版本**,没有任何 Ubuntu codename(jammy/noble 都 404)。`rtpengine.sh::_rtpe_add_repo` 中 sipwise 源固定写 `bookworm`,**不**用 `${UBUNTU_CODENAME}`。Ubuntu 22.04/24.04 上用 Debian 12 的 ngcp-rtpengine 包实测可用 —— ABI 主要依赖 glibc 和内核,`xt_RTPENGINE` 由 DKMS 编译与发行版无关。其他源(kamailio、caddy)仍跟本机 codename。
+
 ### health check
 **不**用 `sleep N + is-active`,用 `wait_for_active <unit> <timeout>`(在 `common.sh`)。kamailio 用 30s,caddy/rtpengine 15s。
 
