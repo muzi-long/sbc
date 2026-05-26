@@ -103,7 +103,11 @@ _kam_render() {
     "DB_HOST=$DB_HOST" "DB_PORT=$DB_PORT" "DB_USER=$DB_USER" "DB_PASS=$DB_PASS" "DB_NAME=$DB_NAME" \
     "REDIS_HOST=$REDIS_HOST" "REDIS_PORT=$REDIS_PORT" "REDIS_PASS=$REDIS_PASS" \
     "RTPE_NG_PORT=$RTPE_NG_PORT"
-  install -m 0644 -o kamailio -g kamailio "$install_dir/conf/kamailio/kamailio.lua" /etc/kamailio/kamailio.lua
+  render_tpl "$install_dir/conf/kamailio/kamailio.lua.tpl" /etc/kamailio/kamailio.lua \
+    "PRIVATE_IP=$PRIVATE_IP" \
+    "SIP_UDP_PORT=$SIP_UDP_PORT"
+  chown kamailio:kamailio /etc/kamailio/kamailio.lua
+  chmod 644 /etc/kamailio/kamailio.lua
   # dispatcher.list 不由本脚本管理,部署时由运维手动拷贝并填上游网关 IP
   # 模板见 install/conf/kamailio/dispatcher.list.example
   if [ ! -f /etc/kamailio/dispatcher.list ]; then

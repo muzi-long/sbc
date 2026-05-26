@@ -24,6 +24,13 @@ teardown() { rm -rf "$TEST_TMPDIR"; }
   ! grep -qE '__[A-Z_]+__' "$TEST_TMPDIR/cfg"
 }
 
+@test "kamailio.lua renders all placeholders" {
+  run render_tpl "$REPO_ROOT/install/conf/kamailio/kamailio.lua.tpl" "$TEST_TMPDIR/lua" \
+    "PRIVATE_IP=10.0.0.1" "SIP_UDP_PORT=15060"
+  [ "$status" -eq 0 ]
+  ! grep -qE '__[A-Z_]+__' "$TEST_TMPDIR/lua"
+}
+
 @test "kamailio.cfg missing DB_PASS fails" {
   run render_tpl "$REPO_ROOT/install/conf/kamailio/kamailio.cfg.tpl" "$TEST_TMPDIR/cfg" \
     "PUBLIC_IP=1.2.3.4" "PRIVATE_IP=10.0.0.1" "LISTEN_IFACE=eth0" \

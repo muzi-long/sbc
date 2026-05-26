@@ -330,7 +330,7 @@ function ksr_branch_manage()
     if KSR.isflagset(FLT_EXTERNAL) then
         KSR.rr.record_route()
     else
-        KSR.rr.record_route_advertised_address("__LISTEN_IFACE__:__SIP_UDP_PORT__")
+        KSR.rr.record_route_advertised_address("__PRIVATE_IP__:__SIP_UDP_PORT__")
     end
 end
 
