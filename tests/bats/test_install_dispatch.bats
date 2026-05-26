@@ -16,6 +16,8 @@ setup() {
   export SKIP_ROOT_CHECK=1
   # bypass OS 校验
   export SKIP_OS_CHECK=1
+  # bypass prereq apt 安装(测试环境无需实际运行 apt)
+  export SKIP_PREREQ=1
 }
 
 teardown() {

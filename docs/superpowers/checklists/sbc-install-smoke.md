@@ -21,6 +21,7 @@
 - [ ] `lsmod | grep xt_RTPENGINE` 有输出
 - [ ] `ss -lnup | grep -E ':15060|:2223'` 看到两个端口
 - [ ] `ss -lntp | grep -E ':80|:443|:15062'` 看到 80/443/15062
+- [ ] **填 dispatcher.list**:`sudo vi /etc/kamailio/dispatcher.list`,把示例 IP 改成你的真实上游网关,然后 `sudo -E ./install/install.sh reconfigure kamailio`
 
 ## 重启验收
 

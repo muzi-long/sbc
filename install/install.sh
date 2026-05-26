@@ -23,6 +23,27 @@ usage() {
 EOF
 }
 
+ensure_prereqs() {
+  # 入参:剩余的服务名列表(可能为空,表示交互式)
+  # 全部服务都需要的基础工具
+  local needed=(gnupg ca-certificates curl wget whiptail)
+  # 只在选了 rtpengine(或交互式可能选)时追加 dkms + headers
+  # 因为不知道用户在菜单里会选什么,保守地:只要服务名里有 rtpengine 或服务名为空就追加
+  local s want_rtpe=0
+  if [ "$#" -eq 0 ]; then
+    want_rtpe=1  # 交互式,可能选 rtpengine
+  else
+    for s in "$@"; do
+      [ "$s" = "rtpengine" ] && want_rtpe=1
+    done
+  fi
+  if [ "$want_rtpe" -eq 1 ]; then
+    needed+=(dkms "linux-headers-$(uname -r)")
+  fi
+  apt-get update -qq
+  apt-get install -y "${needed[@]}"
+}
+
 is_known_service() {
   local s="$1"
   for k in "${KNOWN_SERVICES[@]}"; do
@@ -38,6 +59,7 @@ pick_services_via_menu() {
     return 1
   fi
   if ! command -v whiptail >/dev/null 2>&1; then
+    # 正常路径下 ensure_prereqs 已装好 whiptail;这里是兜底
     echo "ERROR: 缺少 whiptail(apt install whiptail)" >&2
     return 1
   fi
@@ -102,6 +124,11 @@ main() {
   if [ "${SKIP_OS_CHECK:-0}" != "1" ]; then
     UBUNTU_CODENAME="$(detect_ubuntu)"
     export UBUNTU_CODENAME
+  fi
+
+  # 全局前置:确保基础工具就位(干净 Ubuntu Server 默认不带 curl/wget/whiptail)
+  if [ "${SKIP_PREREQ:-0}" != "1" ]; then
+    ensure_prereqs "$@"
   fi
 
   do_dispatch "$action" "$@"

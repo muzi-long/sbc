@@ -92,7 +92,12 @@ _kam_render() {
     "REDIS_HOST=$REDIS_HOST" "REDIS_PORT=$REDIS_PORT" "REDIS_PASS=$REDIS_PASS" \
     "RTPE_NG_PORT=$RTPE_NG_PORT"
   install -m 0644 -o kamailio -g kamailio "$install_dir/conf/kamailio/kamailio.lua" /etc/kamailio/kamailio.lua
-  install -m 0644 -o kamailio -g kamailio "$install_dir/conf/kamailio/dispatcher.list" /etc/kamailio/dispatcher.list
+  # dispatcher.list 不由本脚本管理,部署时由运维手动拷贝并填上游网关 IP
+  # 模板见 install/conf/kamailio/dispatcher.list.example
+  if [ ! -f /etc/kamailio/dispatcher.list ]; then
+    install -m 0644 -o kamailio -g kamailio "$install_dir/conf/kamailio/dispatcher.list.example" /etc/kamailio/dispatcher.list
+    echo "⚠️  /etc/kamailio/dispatcher.list 是占位示例,必须改成你的真实上游网关地址后再 reconfigure" >&2
+  fi
   chown kamailio:kamailio /etc/kamailio/kamailio.cfg
   chmod 640 /etc/kamailio/kamailio.cfg  # 含 DB 密码,严格保护
 }
