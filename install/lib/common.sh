@@ -31,3 +31,20 @@ detect_ubuntu() {
   fi
   printf '%s\n' "$codename"
 }
+
+# require_vars NAME1 NAME2 ...
+# 任一变量为空或未设置则返回非零,列出全部缺失项
+require_vars() {
+  local missing=()
+  local name
+  for name in "$@"; do
+    if [ -z "${!name:-}" ]; then
+      missing+=("$name")
+    fi
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "ERROR: 以下变量未设置:" >&2
+    printf '  - %s\n' "${missing[@]}" >&2
+    return 1
+  fi
+}
