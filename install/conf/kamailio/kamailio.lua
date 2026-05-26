@@ -42,13 +42,11 @@ function ksr_request_route()
     if KSR.is_INVITE() and KSR.siputils.has_totag() > 0 then
         if KSR.dispatcher.ds_is_from_list("1", 3) > 0 then
             if KSR.is_myself_turi() then
-                KSR.setflag(FLT_EXTERNAL);
                 if KSR.htable.sht_gete("sips", KSR.pv.gete("$tU")) == "webrtc" then
                     KSR.setflag(WEBRTC_UAS);
                 end
-            else
-                KSR.setflag(FLT_INTERNAL);
             end
+            KSR.setflag(FLT_INTERNAL);
         else
             KSR.setflag(FLT_EXTERNAL);
         end
@@ -59,12 +57,11 @@ function ksr_request_route()
         KSR.x.exit();
     end
 
-
     if KSR.is_INVITE() then
         local ua = KSR.kx.gete_ua();
         if KSR.dispatcher.ds_is_from_list("2", 3) > 0 then
             KSR.info("来自网关呼入:" .. KSR.pv.gete("$fU") .. " => " .. KSR.pv.gete("$tU").."\n")
-            if KSR.dispatcher.ds_select_dst(2, "6") < 0 then
+            if KSR.dispatcher.ds_select_dst(1, "6") < 0 then
                 KSR.sl.sl_send_reply(503, "unavailable");
                 KSR.x.exit()
             end
@@ -144,15 +141,25 @@ function ksr_request_route()
         end
     end
 
-
-    if KSR.is_ACK() or KSR.is_BYE() or KSR.is_INFO() then
+    if KSR.is_ACK() or KSR.is_BYE() then
         ksr_route_relay()
     end
 
+    if KSR.is_INFO() then
+        KSR.sl.sl_send_reply(200, "OK");
+        KSR.x.exit();
+    end
+
     if KSR.is_UPDATE() then
-        KSR.setflag(FLT_INTERNAL);
-        if KSR.htable.sht_gete("sips", KSR.pv.gete("$tU")) == "webrtc" then
-            KSR.setflag(WEBRTC_UAS);
+        if KSR.dispatcher.ds_is_from_list("1", 3) > 0 then
+            if KSR.is_myself_turi() then
+                if KSR.htable.sht_gete("sips", KSR.pv.gete("$tU")) == "webrtc" then
+                    KSR.setflag(WEBRTC_UAS);
+                end
+            end
+            KSR.setflag(FLT_INTERNAL);
+        else
+            KSR.setflag(FLT_EXTERNAL);
         end
         ksr_rtp_offer()
         KSR.tm.t_on_branch("ksr_branch_manage");
@@ -320,12 +327,10 @@ end
 
 function ksr_branch_manage()
     ksr_route_natmanage()
-    if KSR.isflagset(FLT_INTERNAL) then
+    if KSR.isflagset(FLT_EXTERNAL) then
         KSR.rr.record_route()
-    -- elseif KSR.isflagset(FLT_EXTERNAL) then
-    --     KSR.rr.record_route_advertised_address(INTERNAL_IP)
-    -- else
-    --     KSR.rr.record_route_advertised_address(INTERNAL_IP)
+    else
+        KSR.rr.record_route_advertised_address("__LISTEN_IFACE__:__SIP_UDP_PORT__")
     end
 end
 
