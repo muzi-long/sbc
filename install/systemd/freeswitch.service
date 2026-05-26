@@ -14,7 +14,7 @@ RestartSec=3
 LimitNOFILE=999999
 LimitNPROC=65535
 LimitCORE=infinity
-LimitSTACK=240
+LimitSTACK=246000
 TimeoutStartSec=120
 TimeoutStopSec=30
 
