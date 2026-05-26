@@ -4,7 +4,11 @@
 
 ## 项目是什么
 
-SBC(Session Border Controller)宿主机一键安装脚本。在 Ubuntu 上原生部署 **kamailio 5.8 + rtpengine 12.5.1 (in-kernel) + caddy**,通过 systemd 管理、随开机启动。Docker 版的参考实现在 `~/data/project/mygithub/aicallcenter-deploy/{kamailio,rtpengine,caddy}/`,但本仓库是宿主机原生部署版本。
+SBC(Session Border Controller)宿主机一键安装脚本。在 **Debian 12 (bookworm)** 上原生部署 **kamailio 5.8 + rtpengine 12.5.1 (in-kernel) + caddy**,通过 systemd 管理、随开机启动。
+
+**目标 OS:Debian 12 (bookworm),不再支持其他发行版或其他 codename。** 原因:sipwise mr12.5.1 仅发布 bookworm 仓库;Ubuntu 的 libavcodec58 与 Debian 12 的 libavcodec59 ABI 不兼容;ngcp-rtpengine deb 包依赖在 Ubuntu 上死锁。现生产环境已重装为 Debian 12,与上游完全对齐。
+
+Docker 版的参考实现在 `~/data/project/mygithub/aicallcenter-deploy/{kamailio,rtpengine,caddy}/`,但本仓库是宿主机原生部署版本。
 
 ## 关键文档(先读)
 
@@ -19,7 +23,7 @@ SBC(Session Border Controller)宿主机一键安装脚本。在 Ubuntu 上原生
 install/
 ├── install.sh                    # 主入口:参数解析、whiptail 菜单、ensure_prereqs、dispatch
 ├── install.env.example           # 变量样例(install.env 已 .gitignore)
-├── lib/common.sh                 # require_root / detect_ubuntu / require_vars / render_tpl / wait_for_active
+├── lib/common.sh                 # require_root / detect_debian_bookworm / require_vars / render_tpl / wait_for_active
 ├── services/
 │   ├── kamailio.sh / rtpengine.sh / caddy.sh   # do_install / do_reconfigure / do_health
 │   └── _stub.sh                  # 仅供 bats 测试
@@ -65,19 +69,22 @@ docs/superpowers/{specs,plans,checklists}/
 ### dispatcher.list 不在仓库
 `install/conf/kamailio/dispatcher.list.example` 是模板,首次 `install kamailio` 时**只在 `/etc/kamailio/dispatcher.list` 不存在时**才落一份占位副本并 stderr 警告。运维必须手填真实上游网关 IP 再 `reconfigure`。**不要**把示例 IP commit 进仓库当默认值。
 
-### ensure_prereqs(干净 Ubuntu 不带 wget/curl/whiptail)
+### ensure_prereqs(干净 Debian 12 不带 wget/curl/whiptail)
 `install.sh::main` 在 root/OS 校验后会跑 `ensure_prereqs "$@"`,自动装 `gnupg ca-certificates curl wget whiptail`,如果命令行里有 `rtpengine` 或菜单交互式(空参),追加 `dkms linux-headers-$(uname -r)`。**新加服务**(如 freeswitch)若需要额外系统包,加在 `ensure_prereqs` 的条件分支里。
 
 ### apt 源密钥
 全部走 `signed-by=/etc/apt/keyrings/<name>.gpg`,**不**用废弃的 `apt-key`。每个 `_<svc>_add_repo` 末尾用 `apt-get update -o Dir::Etc::sourcelist="sources.list.d/<file>.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"` 只刷新自己新加的源(避免多 service 全装时重复 update)。
 
 ### `/etc/default/kamailio` 必须完整重写
-Ubuntu 22.04 包的 systemd unit `ExecStart=... -f $CFGFILE -m $SHM_MEMORY -M $PKG_MEMORY ...` 引用了多个环境变量,但**包自带的 `/etc/default/kamailio` 只有 `RUN_KAMAILIO`,没有 `CFGFILE` 等**。`EnvironmentFile=-` 前缀让缺失静默,`$CFGFILE` 为空时 kamailio 退化成跑内置默认 cfg(listen 5060、绑所有网卡),用户的 `/etc/kamailio/kamailio.cfg` **完全没生效**。
+Debian 12 包的 systemd unit `ExecStart=... -f $CFGFILE -m $SHM_MEMORY -M $PKG_MEMORY ...` 引用了多个环境变量,但**包自带的 `/etc/default/kamailio` 只有 `RUN_KAMAILIO`,没有 `CFGFILE` 等**。`EnvironmentFile=-` 前缀让缺失静默,`$CFGFILE` 为空时 kamailio 退化成跑内置默认 cfg(listen 5060、绑所有网卡),用户的 `/etc/kamailio/kamailio.cfg` **完全没生效**。
 
 `_kam_install_pkgs` 用 `cat > /etc/default/kamailio` **整体重写**这个文件,设全 `RUN_KAMAILIO=yes` / `CFGFILE` / `SHM_MEMORY` / `PKG_MEMORY` / `USER` / `GROUP`。不要回退成 sed 单行替换 —— 缺一个变量就静默退化。
 
-### sipwise 源固定用 `bookworm`,不要跟 UBUNTU_CODENAME
-sipwise `spce/mr12.5.1` 仓库**只发布 Debian 12 (bookworm) 版本**,没有任何 Ubuntu codename(jammy/noble 都 404)。`rtpengine.sh::_rtpe_add_repo` 中 sipwise 源固定写 `bookworm`,**不**用 `${UBUNTU_CODENAME}`。Ubuntu 22.04/24.04 上用 Debian 12 的 ngcp-rtpengine 包实测可用 —— ABI 主要依赖 glibc 和内核,`xt_RTPENGINE` 由 DKMS 编译与发行版无关。其他源(kamailio、caddy)仍跟本机 codename。
+### 所有 apt 源都用 `bookworm`,与系统对齐
+目标 OS 固定为 Debian 12 (bookworm),三个 service 的 apt 源 codename 统一硬编码 `bookworm`,不再读任何环境变量:
+- kamailio:`deb.kamailio.org/kamailio58 bookworm main`
+- sipwise(rtpengine):`deb.sipwise.com/spce/${RTPENGINE_RELEASE}/ bookworm main`(sipwise 只发 bookworm)
+- caddy:Cloudsmith 脚本自动处理,与 OS codename 无关
 
 ### health check
 **不**用 `sleep N + is-active`,用 `wait_for_active <unit> <timeout>`(在 `common.sh`)。kamailio 用 30s,caddy/rtpengine 15s。

@@ -10,32 +10,44 @@ teardown() {
   rm -rf "$TEST_TMPDIR"
 }
 
-@test "detect_ubuntu reads codename from os-release file" {
+@test "detect_debian_bookworm reads ID=debian + codename=bookworm passes" {
+  cat > "$TEST_TMPDIR/os-release" <<EOF
+ID=debian
+VERSION_ID="12"
+VERSION_CODENAME=bookworm
+EOF
+  run detect_debian_bookworm "$TEST_TMPDIR/os-release"
+  [ "$status" -eq 0 ]
+}
+
+@test "detect_debian_bookworm fails on ubuntu" {
   cat > "$TEST_TMPDIR/os-release" <<EOF
 ID=ubuntu
 VERSION_ID="22.04"
 VERSION_CODENAME=jammy
 EOF
-  run detect_ubuntu "$TEST_TMPDIR/os-release"
-  [ "$status" -eq 0 ]
-  [ "$output" = "jammy" ]
+  run detect_debian_bookworm "$TEST_TMPDIR/os-release"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Debian"* ]]
 }
 
-@test "detect_ubuntu fails on debian" {
+@test "detect_debian_bookworm fails on debian bullseye" {
   cat > "$TEST_TMPDIR/os-release" <<EOF
 ID=debian
-VERSION_CODENAME=bookworm
+VERSION_ID="11"
+VERSION_CODENAME=bullseye
 EOF
-  run detect_ubuntu "$TEST_TMPDIR/os-release"
+  run detect_debian_bookworm "$TEST_TMPDIR/os-release"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"Ubuntu"* ]]
+  [[ "$output" == *"bookworm"* ]]
 }
 
-@test "detect_ubuntu fails when codename missing" {
+@test "detect_debian_bookworm fails when VERSION_CODENAME missing" {
   cat > "$TEST_TMPDIR/os-release" <<EOF
-ID=ubuntu
+ID=debian
+VERSION_ID="12"
 EOF
-  run detect_ubuntu "$TEST_TMPDIR/os-release"
+  run detect_debian_bookworm "$TEST_TMPDIR/os-release"
   [ "$status" -ne 0 ]
 }
 

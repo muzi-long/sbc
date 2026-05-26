@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install/services/kamailio.sh
 # 暴露 do_install / do_reconfigure / do_health,被 install.sh 在子 shell 中 source。
-# 依赖:已 source common.sh、UBUNTU_CODENAME 已导出。
+# 依赖:已 source common.sh。目标 OS:Debian 12 (bookworm)。
 
 # ===== 必填变量(由调用 install.sh 的环境注入,例如 source install.env)=====
 # 用 `: "${X:=}"` 保护:若未注入,先设为空字符串,避免 set -u 报 unbound variable,
@@ -35,7 +35,7 @@ _kam_check_vars() {
     KAM_ALIAS_1 KAM_ALIAS_2 \
     DB_HOST DB_PORT DB_USER DB_PASS DB_NAME \
     REDIS_HOST REDIS_PORT \
-    RTPE_NG_PORT KAMAILIO_BRANCH UBUNTU_CODENAME
+    RTPE_NG_PORT KAMAILIO_BRANCH
 }
 
 _kam_check_iface() {
@@ -56,7 +56,7 @@ _kam_add_repo() {
     | gpg --batch --no-tty --yes --dearmor -o /etc/apt/keyrings/kamailio.gpg
   chmod 0644 /etc/apt/keyrings/kamailio.gpg
   cat > /etc/apt/sources.list.d/kamailio.list <<EOF
-deb [signed-by=/etc/apt/keyrings/kamailio.gpg] http://deb.kamailio.org/kamailio${KAMAILIO_BRANCH} ${UBUNTU_CODENAME} main
+deb [signed-by=/etc/apt/keyrings/kamailio.gpg] http://deb.kamailio.org/kamailio${KAMAILIO_BRANCH} bookworm main
 EOF
   apt-get update -o Dir::Etc::sourcelist="sources.list.d/kamailio.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
 }
@@ -74,7 +74,7 @@ _kam_install_pkgs() {
     kamailio-utils-modules \
     kamailio-extra-modules \
     kamailio-lua-modules
-  # /etc/default/kamailio 的坑(Ubuntu 22.04 包):
+  # /etc/default/kamailio 的坑(Debian 12 包):
   # - 默认 RUN_KAMAILIO=no(systemd unit 不检查这个,但 init.d 检查)
   # - 默认**没有** CFGFILE / SHM_MEMORY / PKG_MEMORY,而 systemd ExecStart 引用了它们
   #   (`-f $CFGFILE`),为空时 kamailio 退化成跑内置默认 cfg → 你的配置完全没生效

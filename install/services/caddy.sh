@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install/services/caddy.sh
 # 暴露 do_install / do_reconfigure / do_health,被 install.sh 在子 shell 中 source。
-# 依赖:已 source common.sh、UBUNTU_CODENAME 已导出。
+# 依赖:已 source common.sh。目标 OS:Debian 12 (bookworm)。
 
 # ===== 必填变量(由调用 install.sh 的环境注入,例如 source install.env)=====
 # 用 `: "${X:=}"` 保护:若未注入,先设为空字符串,避免 set -u 报 unbound variable,

@@ -10,9 +10,10 @@ require_root() {
   fi
 }
 
-# detect_ubuntu [os-release-path]
-# 输出 VERSION_CODENAME,非 Ubuntu 或缺少 codename 时非零退出
-detect_ubuntu() {
+# detect_debian_bookworm [os-release-path]
+# 校验运行环境是 Debian 12 (bookworm),否则非零退出
+# 不再返回 codename:既然目标固定为 bookworm,常量化即可
+detect_debian_bookworm() {
   local os_release="${1:-/etc/os-release}"
   if [ ! -r "$os_release" ]; then
     echo "ERROR: 读不到 $os_release" >&2
@@ -21,15 +22,14 @@ detect_ubuntu() {
   local id codename
   id="$(awk -F= '$1=="ID"{gsub(/"/,"",$2); print $2}' "$os_release")"
   codename="$(awk -F= '$1=="VERSION_CODENAME"{gsub(/"/,"",$2); print $2}' "$os_release")"
-  if [ "$id" != "ubuntu" ]; then
-    echo "ERROR: 仅支持 Ubuntu,检测到 ID=$id" >&2
+  if [ "$id" != "debian" ]; then
+    echo "ERROR: 仅支持 Debian,检测到 ID=$id" >&2
     return 1
   fi
-  if [ -z "$codename" ]; then
-    echo "ERROR: 缺少 VERSION_CODENAME" >&2
+  if [ "$codename" != "bookworm" ]; then
+    echo "ERROR: 仅支持 Debian 12 (bookworm),检测到 codename=$codename" >&2
     return 1
   fi
-  printf '%s\n' "$codename"
 }
 
 # require_vars NAME1 NAME2 ...

@@ -1,5 +1,7 @@
 # SBC 宿主机一键安装脚本 实施计划
 
+> **STATUS UPDATE 2026-05-26**:目标 OS 改为 Debian 12 单一支持,详见 CLAUDE.md
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在 Ubuntu 宿主机上一键安装并随开机启动 kamailio 5.8、rtpengine 12.5.1(in-kernel)、caddy,通过 whiptail 多选菜单或位置参数选择服务,严格失败模式。

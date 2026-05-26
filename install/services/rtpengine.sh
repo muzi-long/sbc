@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install/services/rtpengine.sh
 # 暴露 do_install / do_reconfigure / do_health,被 install.sh 在子 shell 中 source。
-# 依赖:已 source common.sh、UBUNTU_CODENAME 已导出。
+# 依赖:已 source common.sh。目标 OS:Debian 12 (bookworm)。
 
 # ===== 必填变量(由调用 install.sh 的环境注入,例如 source install.env)=====
 # 用 `: "${X:=}"` 保护:若未注入,先设为空字符串,避免 set -u 报 unbound variable,
@@ -19,7 +19,7 @@ _rtpe_install_dir() {
 }
 
 _rtpe_check_vars() {
-  require_vars PUBLIC_IP PRIVATE_IP RTPE_NG_PORT RTPE_PORT_MIN RTPE_PORT_MAX RTPENGINE_RELEASE UBUNTU_CODENAME
+  require_vars PUBLIC_IP PRIVATE_IP RTPE_NG_PORT RTPE_PORT_MIN RTPE_PORT_MAX RTPENGINE_RELEASE
 }
 
 _rtpe_add_repo() {
@@ -28,9 +28,7 @@ _rtpe_add_repo() {
   wget -qO- 'https://deb.sipwise.com/spce/keyring/sipwise-keyring-bootstrap.gpg' \
     | gpg --batch --no-tty --yes --dearmor -o /etc/apt/keyrings/sipwise.gpg
   chmod 0644 /etc/apt/keyrings/sipwise.gpg
-  # sipwise spce/mr12.5.1 只发布 Debian 12 (bookworm) 仓库,没有 Ubuntu codename。
-  # Ubuntu 上直接用 bookworm 源:ngcp-rtpengine 的 ABI 主要依赖 glibc 和内核,
-  # 在 Ubuntu 22.04/24.04 上实测可用;xt_RTPENGINE 由 DKMS 编译,与发行版无关。
+  # sipwise spce/mr12.5.1 只发布 Debian 12 (bookworm) 仓库,与目标 OS 天然对齐。
   cat > /etc/apt/sources.list.d/sipwise.list <<EOF
 deb [signed-by=/etc/apt/keyrings/sipwise.gpg] https://deb.sipwise.com/spce/${RTPENGINE_RELEASE}/ bookworm main
 EOF

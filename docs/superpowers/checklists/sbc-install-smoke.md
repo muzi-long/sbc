@@ -1,10 +1,10 @@
 # SBC 安装 — 真机 smoke 验收
 
-每次发布到新环境前在干净的 Ubuntu 机器上跑一遍。
+每次发布到新环境前在干净的 Debian 12 (bookworm) 机器上跑一遍。
 
 ## 前置
 
-- [ ] 准备一台干净 Ubuntu 22.04 或 24.04 机器,SSH 进入
+- [ ] 准备一台干净 **Debian 12 (bookworm)** 机器,SSH 进入
 - [ ] 仓库 clone 到 `/root/sbc`
 - [ ] 拷贝并填好 `install/install.env`(参考 `install.env.example`)
 - [ ] 网卡 / IP 信息核对正确(`ip a` 与 `install.env` 中的 PRIVATE_IP 一致)

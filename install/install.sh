@@ -124,11 +124,10 @@ main() {
     require_root
   fi
   if [ "${SKIP_OS_CHECK:-0}" != "1" ]; then
-    UBUNTU_CODENAME="$(detect_ubuntu)"
-    export UBUNTU_CODENAME
+    detect_debian_bookworm
   fi
 
-  # 全局前置:确保基础工具就位(干净 Ubuntu Server 默认不带 curl/wget/whiptail)
+  # 全局前置:确保基础工具就位(干净 Debian 12 默认不带 curl/wget/whiptail)
   if [ "${SKIP_PREREQ:-0}" != "1" ]; then
     ensure_prereqs "$@"
   fi

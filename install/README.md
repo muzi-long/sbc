@@ -1,6 +1,6 @@
 # SBC 宿主机一键安装
 
-支持 **kamailio 5.8 / rtpengine 12.5.1 (in-kernel) / caddy**，Ubuntu（任意版本）。
+支持 **kamailio 5.8 / rtpengine 12.5.1 (in-kernel) / caddy**，**Debian 12 (bookworm)**。
 
 ## 用法
 
