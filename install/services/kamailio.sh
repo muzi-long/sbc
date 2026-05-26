@@ -52,7 +52,7 @@ _kam_check_iface() {
 _kam_add_repo() {
   install -d -m 0755 /etc/apt/keyrings
   wget -qO- "http://deb.kamailio.org/kamailiodebkey.gpg" \
-    | gpg --dearmor -o /etc/apt/keyrings/kamailio.gpg
+    | gpg --batch --no-tty --dearmor -o /etc/apt/keyrings/kamailio.gpg
   chmod 0644 /etc/apt/keyrings/kamailio.gpg
   cat > /etc/apt/sources.list.d/kamailio.list <<EOF
 deb [signed-by=/etc/apt/keyrings/kamailio.gpg] http://deb.kamailio.org/kamailio${KAMAILIO_BRANCH} ${UBUNTU_CODENAME} main
