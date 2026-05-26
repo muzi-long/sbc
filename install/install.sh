@@ -10,7 +10,7 @@ SERVICES_DIR="${INSTALL_SERVICES_DIR:-$SCRIPT_DIR/services}"
 # shellcheck source=lib/common.sh
 source "$LIB_DIR/common.sh"
 
-KNOWN_SERVICES=(kamailio rtpengine caddy freeswitch)
+KNOWN_SERVICES=(kamailio rtpengine caddy freeswitch docker)
 
 usage() {
   cat <<EOF

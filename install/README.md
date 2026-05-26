@@ -1,6 +1,6 @@
 # SBC 宿主机一键安装
 
-支持 **kamailio 5.8 / rtpengine 12.5.1 (in-kernel) / caddy**，**Debian 12 (bookworm)**。
+支持 **kamailio 5.8 / rtpengine 12.5.1 (in-kernel) / caddy / freeswitch / docker**，**Debian 12 (bookworm)**。
 
 ## 用法
 
@@ -47,19 +47,21 @@ sudo -E ./install/install.sh reconfigure kamailio
 
 ## 各服务必填变量
 
-| 变量 | kamailio | rtpengine | caddy | freeswitch |
-|------|:-:|:-:|:-:|:-:|
-| PUBLIC_IP / PRIVATE_IP | ✓ | ✓ | | |
-| LISTEN_IFACE | ✓ | | | |
-| SIP_*_PORT / KAM_ALIAS_* | ✓ | | | |
-| DB_* / REDIS_* | ✓ | | | |
-| RTPE_NG_PORT | ✓ | ✓ | | |
-| RTPE_PORT_MIN/MAX | | ✓ | | |
-| CADDY_*_DOMAIN / CADDY_*_UPSTREAM | | | ✓ | |
+| 变量 | kamailio | rtpengine | caddy | freeswitch | docker |
+|------|:-:|:-:|:-:|:-:|:-:|
+| PUBLIC_IP / PRIVATE_IP | ✓ | ✓ | | | |
+| LISTEN_IFACE | ✓ | | | | |
+| SIP_*_PORT / KAM_ALIAS_* | ✓ | | | | |
+| DB_* / REDIS_* | ✓ | | | | |
+| RTPE_NG_PORT | ✓ | ✓ | | | |
+| RTPE_PORT_MIN/MAX | | ✓ | | | |
+| CADDY_*_DOMAIN / CADDY_*_UPSTREAM | | | ✓ | | |
 
 只装某个服务时，无关变量留空即可。
 
 > **freeswitch 无必填变量**。配置走 `/usr/local/freeswitch/conf/`：首次安装从 `install/conf/freeswitch/conf/` 原样拷入，后续 `reconfigure` 不覆盖运维已改动的文件。
+
+> **docker 无必填变量**。daemon.json 由运维自行编辑；若需镜像加速、日志大小限制等，直接编辑 `/etc/docker/daemon.json` 后执行 `reconfigure docker`。
 
 ## 验收（每次安装后跑一遍）
 
@@ -77,6 +79,13 @@ sudo ss -lntp | grep -E ':80|:443|:15062'
 sudo systemctl is-active freeswitch
 sudo /usr/local/freeswitch/bin/fs_cli -x "status" | head -5
 sudo ss -lnup | grep -E ':5060|:5080'
+```
+
+如果安装了 docker，额外验收：
+
+```bash
+sudo docker version
+sudo docker compose version
 ```
 
 重启宿主机后再跑一遍，所有服务应自动起来。

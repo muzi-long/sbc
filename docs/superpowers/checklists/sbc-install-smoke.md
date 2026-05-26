@@ -25,6 +25,10 @@
 - [ ] `sudo systemctl is-active freeswitch` = `active`
 - [ ] `sudo /usr/local/freeswitch/bin/fs_cli -x "status"` 能输出版本和上线时间
 - [ ] `sudo ss -lnup | grep -E ':5060|:5080'` 看到 FS SIP 端口
+- [ ] `sudo systemctl is-active docker` = `active`
+- [ ] `sudo docker version` 显示 client + server 版本
+- [ ] `sudo docker compose version` 显示 v2.x
+- [ ] `sudo docker run --rm hello-world` 能拉取并运行示例容器
 - [ ] **首次安装预计 20-40 分钟**(源码编译耗时)
 
 ## 重启验收
