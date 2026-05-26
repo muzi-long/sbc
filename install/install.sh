@@ -53,8 +53,10 @@ is_known_service() {
 }
 
 pick_services_via_menu() {
-  # 输出选中的服务名,空格分隔
-  if [ ! -t 0 ] || [ ! -t 1 ]; then
+  # 输出选中的服务名,空格分隔。
+  # 注意:本函数被 do_dispatch 用 $(...) 调用,所以 fd 1 必然是管道,
+  # 只检查 stdin(fd 0)是否为终端 —— 用户的键盘输入靠它。
+  if [ ! -t 0 ]; then
     echo "ERROR: 非交互终端下必须显式列出服务名(non-interactive)" >&2
     return 1
   fi
