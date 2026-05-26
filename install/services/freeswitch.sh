@@ -179,9 +179,41 @@ _fs_install_conf() {
   fi
   cp -r "$install_dir/conf/freeswitch/conf/." "$FS_PREFIX/conf/"
   echo "[freeswitch] 已落地仓库 conf 到 $FS_PREFIX/conf/" >&2
+}
 
+# 把 FS_PREFIX/recordings 和 FS_PREFIX/audios 软链到 /data/{recordings,audios},
+# 让录音/业务音频实际写到大盘 /data 而非系统盘 /usr/local。
+# 处理顺序:确保 /data 目标目录存在 → 备份 FS 下已有内容(若有非链接) → ln -sfn
+_fs_install_data_links() {
   install -d -m 0755 /data/recordings
   install -d -m 0755 /data/audios
+  chown freeswitch:freeswitch /data/recordings /data/audios 2>/dev/null || true
+
+  local target src bak
+  for pair in "recordings:/data/recordings" "audios:/data/audios"; do
+    src="$FS_PREFIX/${pair%%:*}"
+    target="${pair##*:}"
+    if [ -L "$src" ]; then
+      # 已是软链,直接覆盖(ln -sfn 保证指向正确)
+      ln -sfn "$target" "$src"
+    elif [ -d "$src" ]; then
+      # 真目录:先把已有内容 mv 到 /data 目标下,再删除原目录、建软链
+      bak="${src}.bak.$(date +%Y%m%d-%H%M%S)"
+      mv "$src" "$bak"
+      # 备份目录里如果有文件,合并到 /data(忽略已存在同名)
+      if [ -n "$(ls -A "$bak" 2>/dev/null)" ]; then
+        cp -rn "$bak/." "$target/" 2>/dev/null || true
+        echo "[freeswitch] $src 原有内容已备份到 $bak 并合并到 $target" >&2
+      else
+        rmdir "$bak" 2>/dev/null || true
+      fi
+      ln -sfn "$target" "$src"
+    else
+      # 不存在:直接建链
+      ln -sfn "$target" "$src"
+    fi
+  done
+  echo "[freeswitch] 已建立软链:$FS_PREFIX/recordings → /data/recordings,$FS_PREFIX/audios → /data/audios" >&2
 }
 
 # 装 systemd unit(完整 unit,不是 drop-in)
@@ -198,6 +230,7 @@ do_install() {
   _fs_build_from_source
   _fs_install_symlinks
   _fs_install_conf
+  _fs_install_data_links
   _fs_install_unit
   systemctl enable freeswitch
   # 显式 restart:重跑 install 时(幂等场景)freeswitch 可能已经在跑,
