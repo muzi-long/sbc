@@ -164,18 +164,21 @@ _fs_install_symlinks() {
   ln -sf "$FS_PREFIX/bin/fs_cli" /usr/bin/fs_cli
 }
 
-# 首次落地 conf 目录,不覆盖运维已修改的文件
-# 用 cp -rn:目录拷过去,已存在文件不覆盖(等同 dispatcher.list 策略)
+# do_install 时强制部署仓库 conf:make install 会自动写一份"默认 conf"
+# (~200 文件),覆盖我们仓库版。所以这里**先备份现有 conf 到带时间戳的目录**,
+# 再清空 + 拷贝仓库版。reconfigure 不调用本函数,所以运维手改的 conf 不会丢。
 _fs_install_conf() {
-  local install_dir
+  local install_dir backup_dir
   install_dir="$(_fs_install_dir)"
   install -d -m 0755 "$FS_PREFIX/conf"
-  if [ -z "$(ls -A "$FS_PREFIX/conf" 2>/dev/null)" ]; then
-    cp -r "$install_dir/conf/freeswitch/conf/." "$FS_PREFIX/conf/"
-    echo "[freeswitch] 已落地参考 conf 到 $FS_PREFIX/conf/(首次安装)" >&2
-  else
-    echo "[freeswitch] $FS_PREFIX/conf/ 已存在内容,不覆盖(reconfigure 同样不动 conf)" >&2
+  if [ -n "$(ls -A "$FS_PREFIX/conf" 2>/dev/null)" ]; then
+    backup_dir="${FS_PREFIX}/conf.bak.$(date +%Y%m%d-%H%M%S)"
+    mv "$FS_PREFIX/conf" "$backup_dir"
+    install -d -m 0755 "$FS_PREFIX/conf"
+    echo "[freeswitch] 现有 conf 已备份到 $backup_dir(install 用仓库版覆盖;reconfigure 永远不动 conf)" >&2
   fi
+  cp -r "$install_dir/conf/freeswitch/conf/." "$FS_PREFIX/conf/"
+  echo "[freeswitch] 已落地仓库 conf 到 $FS_PREFIX/conf/" >&2
 
   install -d -m 0755 /data/recordings
   install -d -m 0755 /data/audios
