@@ -8,6 +8,10 @@
 : "${FS_BUILD_DIR:=/usr/local/src}"
 : "${FS_VERSION:=v1.10.12}"
 : "${FS_PREFIX:=/usr/local/freeswitch}"
+# GitHub 代理前缀,加速国内访问。空 = 直连。
+# 推荐 GH_PROXY="https://gh-proxy.com/" (实测 ~6 MB/s,直连 ~17 KB/s)
+# 末尾必须带斜杠;用法:${GH_PROXY}https://github.com/...
+: "${GH_PROXY:=}"
 
 # 返回 install/ 目录的绝对路径
 _fs_install_dir() {
@@ -107,27 +111,28 @@ _fs_build_from_source() {
   git config --global http.lowSpeedTime 60 || true
 
   # spandsp(fs 分支)
-  _fs_git_clone_retry "$FS_BUILD_DIR/spandsp" https://github.com/freeswitch/spandsp.git fs
+  _fs_git_clone_retry "$FS_BUILD_DIR/spandsp" "${GH_PROXY}https://github.com/freeswitch/spandsp.git" fs
   ( cd "$FS_BUILD_DIR/spandsp" && ./bootstrap.sh -j && ./configure && make && make install )
 
   # sofia-sip(master 分支)
-  _fs_git_clone_retry "$FS_BUILD_DIR/sofia-sip" https://github.com/freeswitch/sofia-sip.git
+  _fs_git_clone_retry "$FS_BUILD_DIR/sofia-sip" "${GH_PROXY}https://github.com/freeswitch/sofia-sip.git"
   ( cd "$FS_BUILD_DIR/sofia-sip" && ./bootstrap.sh -j && ./configure && make && make install )
 
   # libks v1.8.3
-  _fs_git_clone_retry "$FS_BUILD_DIR/libks" https://github.com/signalwire/libks.git v1.8.3
+  _fs_git_clone_retry "$FS_BUILD_DIR/libks" "${GH_PROXY}https://github.com/signalwire/libks.git" v1.8.3
   ( cd "$FS_BUILD_DIR/libks" && cmake . && make && make install && ldconfig )
 
   # signalwire-c v1.3.3
-  _fs_git_clone_retry "$FS_BUILD_DIR/signalwire-c" https://github.com/signalwire/signalwire-c.git v1.3.3
+  _fs_git_clone_retry "$FS_BUILD_DIR/signalwire-c" "${GH_PROXY}https://github.com/signalwire/signalwire-c.git" v1.3.3
   ( cd "$FS_BUILD_DIR/signalwire-c" && cmake . && make && make install && ldconfig )
 
   # freeswitch 主体 v1.10.12 — 用 tarball 下载(git clone ~700MB 在国内极慢易挂,
   # tarball ~80MB,快 5-10 倍)。FreeSWITCH 主体的 bootstrap.sh 不依赖 git 历史。
   # 注意:tag 形如 v1.10.12,GitHub archive 解压后顶层目录是 freeswitch-1.10.12(去 v)
+  # 若设了 GH_PROXY,加速下载(国内推荐 https://gh-proxy.com/)
   local fs_tag_no_v="${FS_VERSION#v}"
   _fs_tarball_fetch_retry "$FS_BUILD_DIR/freeswitch" \
-    "https://github.com/signalwire/freeswitch/archive/refs/tags/${FS_VERSION}.tar.gz" \
+    "${GH_PROXY}https://github.com/signalwire/freeswitch/archive/refs/tags/${FS_VERSION}.tar.gz" \
     "freeswitch-${fs_tag_no_v}"
   (
     cd "$FS_BUILD_DIR/freeswitch"
