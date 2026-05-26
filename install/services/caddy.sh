@@ -45,6 +45,8 @@ _caddy_render() {
   local install_dir dst="/etc/caddy/Caddyfile" tmp="/etc/caddy/Caddyfile.new"
   install_dir="$(_caddy_install_dir)"
   install -d -m 0755 /etc/caddy
+  # access log 目录(Caddyfile.tpl 里每个站点写 /var/log/caddy/<name>.log)
+  install -d -m 0755 -o caddy -g caddy /var/log/caddy
   render_tpl "$install_dir/conf/caddy/Caddyfile.tpl" "$tmp" \
     "CADDY_API_DOMAIN=$CADDY_API_DOMAIN" \
     "CADDY_API_UPSTREAM=$CADDY_API_UPSTREAM" \
@@ -78,7 +80,10 @@ do_install() {
   apt-get install -y caddy
   _caddy_render
   _caddy_install_dropin
-  systemctl enable --now caddy
+  systemctl enable caddy
+  # apt 装 caddy 时 postinst 已 start 服务,用的是包默认 Caddyfile
+  # 我们渲染过新 Caddyfile,必须 restart 才能让新配置生效
+  systemctl restart caddy
   wait_for_active caddy 15 || {
     journalctl -u caddy -n 50 --no-pager >&2
     return 1

@@ -23,6 +23,8 @@ teardown() {
   grep -q "localhost:8080" "$TEST_TMPDIR/Caddyfile"
   grep -q "ws.test" "$TEST_TMPDIR/Caddyfile"
   grep -q "127.0.0.1:15062" "$TEST_TMPDIR/Caddyfile"
+  # access log 块每个站点都该出现
+  [ "$(grep -c '/var/log/caddy/' "$TEST_TMPDIR/Caddyfile")" -eq 3 ]
   ! grep -q "__CADDY_" "$TEST_TMPDIR/Caddyfile"
 }
 
