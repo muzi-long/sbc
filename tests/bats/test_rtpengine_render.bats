@@ -15,6 +15,7 @@ teardown() { rm -rf "$TEST_TMPDIR"; }
   grep -q "priv/10.0.0.1;pub/10.0.0.1!1.2.3.4" "$TEST_TMPDIR/out"
   grep -q "listen-ng = 0.0.0.0:2223" "$TEST_TMPDIR/out"
   grep -q "port-min = 40000" "$TEST_TMPDIR/out"
+  grep -q "port-max = 60000" "$TEST_TMPDIR/out"
   ! grep -q "__" "$TEST_TMPDIR/out"
 }
 

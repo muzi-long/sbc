@@ -1,5 +1,5 @@
 [rtpengine]
-table = -1
+table = 0
 interface = priv/__PRIVATE_IP__;pub/__PRIVATE_IP__!__PUBLIC_IP__
 listen-ng = 0.0.0.0:__RTPE_NG_PORT__
 port-min = __RTPE_PORT_MIN__

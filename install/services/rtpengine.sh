@@ -43,7 +43,11 @@ _rtpe_install_pkgs() {
 }
 
 _rtpe_load_kernel_mod() {
-  modprobe xt_RTPENGINE
+  if ! modprobe xt_RTPENGINE 2>&1; then
+    echo "ERROR: 加载 xt_RTPENGINE 失败,检查 DKMS 状态:" >&2
+    dkms status 2>/dev/null | grep -i rtpengine >&2 || echo "(dkms 未显示 rtpengine 条目,headers 不匹配?)" >&2
+    return 1
+  fi
   echo "xt_RTPENGINE" > /etc/modules-load.d/rtpengine.conf
   lsmod | grep -q xt_RTPENGINE || {
     echo "ERROR: xt_RTPENGINE 未加载" >&2
@@ -63,7 +67,7 @@ _rtpe_render() {
     "RTPE_PORT_MIN=$RTPE_PORT_MIN" \
     "RTPE_PORT_MAX=$RTPE_PORT_MAX"
   chown rtpengine:rtpengine "$dst"
-  chmod 640 "$dst"
+  chmod 640 "$dst"  # 640:rtpengine 组只读,虽然本配置不含密钥,但与 kamailio 保持一致
 }
 
 _rtpe_install_dropin() {
@@ -85,6 +89,7 @@ do_install() {
   systemctl enable --now rtpengine-daemon
   sleep 3  # 等待 rtpengine 完成初始化
   systemctl is-active rtpengine-daemon >/dev/null || {
+    lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
     journalctl -u rtpengine-daemon -n 50 --no-pager >&2
     return 1
   }
@@ -98,6 +103,7 @@ do_reconfigure() {
   systemctl restart rtpengine-daemon
   sleep 2  # 等待 rtpengine reload 完成
   systemctl is-active rtpengine-daemon >/dev/null || {
+    lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
     journalctl -u rtpengine-daemon -n 50 --no-pager >&2
     return 1
   }
