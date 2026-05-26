@@ -72,10 +72,20 @@ _kam_install_pkgs() {
     kamailio-xmpp-modules \
     kamailio-utils-modules \
     kamailio-extra-modules
-  # 默认 disable 的坑:Ubuntu 包默认 /etc/default/kamailio 里 RUN_KAMAILIO=no
-  sed -i 's/^#*RUN_KAMAILIO=.*/RUN_KAMAILIO=yes/' /etc/default/kamailio
-  grep -q '^RUN_KAMAILIO=yes' /etc/default/kamailio || \
-    echo 'RUN_KAMAILIO=yes' >> /etc/default/kamailio
+  # /etc/default/kamailio 的坑(Ubuntu 22.04 包):
+  # - 默认 RUN_KAMAILIO=no(systemd unit 不检查这个,但 init.d 检查)
+  # - 默认**没有** CFGFILE / SHM_MEMORY / PKG_MEMORY,而 systemd ExecStart 引用了它们
+  #   (`-f $CFGFILE`),为空时 kamailio 退化成跑内置默认 cfg → 你的配置完全没生效
+  # 直接重写整个文件,确保所有变量都有值。
+  cat > /etc/default/kamailio <<'EOF'
+# Managed by sbc install script. Do not edit; rerun reconfigure instead.
+RUN_KAMAILIO=yes
+CFGFILE=/etc/kamailio/kamailio.cfg
+SHM_MEMORY=64
+PKG_MEMORY=8
+USER=kamailio
+GROUP=kamailio
+EOF
 }
 
 # 渲染 kamailio.cfg + lua/dispatcher.list 到 /etc/kamailio/,

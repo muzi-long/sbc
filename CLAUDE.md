@@ -71,6 +71,11 @@ docs/superpowers/{specs,plans,checklists}/
 ### apt 源密钥
 全部走 `signed-by=/etc/apt/keyrings/<name>.gpg`,**不**用废弃的 `apt-key`。每个 `_<svc>_add_repo` 末尾用 `apt-get update -o Dir::Etc::sourcelist="sources.list.d/<file>.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"` 只刷新自己新加的源(避免多 service 全装时重复 update)。
 
+### `/etc/default/kamailio` 必须完整重写
+Ubuntu 22.04 包的 systemd unit `ExecStart=... -f $CFGFILE -m $SHM_MEMORY -M $PKG_MEMORY ...` 引用了多个环境变量,但**包自带的 `/etc/default/kamailio` 只有 `RUN_KAMAILIO`,没有 `CFGFILE` 等**。`EnvironmentFile=-` 前缀让缺失静默,`$CFGFILE` 为空时 kamailio 退化成跑内置默认 cfg(listen 5060、绑所有网卡),用户的 `/etc/kamailio/kamailio.cfg` **完全没生效**。
+
+`_kam_install_pkgs` 用 `cat > /etc/default/kamailio` **整体重写**这个文件,设全 `RUN_KAMAILIO=yes` / `CFGFILE` / `SHM_MEMORY` / `PKG_MEMORY` / `USER` / `GROUP`。不要回退成 sed 单行替换 —— 缺一个变量就静默退化。
+
 ### sipwise 源固定用 `bookworm`,不要跟 UBUNTU_CODENAME
 sipwise `spce/mr12.5.1` 仓库**只发布 Debian 12 (bookworm) 版本**,没有任何 Ubuntu codename(jammy/noble 都 404)。`rtpengine.sh::_rtpe_add_repo` 中 sipwise 源固定写 `bookworm`,**不**用 `${UBUNTU_CODENAME}`。Ubuntu 22.04/24.04 上用 Debian 12 的 ngcp-rtpengine 包实测可用 —— ABI 主要依赖 glibc 和内核,`xt_RTPENGINE` 由 DKMS 编译与发行版无关。其他源(kamailio、caddy)仍跟本机 codename。
 
