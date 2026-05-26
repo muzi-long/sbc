@@ -153,12 +153,15 @@ _fs_build_from_source() {
     make cd-moh-install || echo "[freeswitch] moh 下载失败,跳过" >&2
   )
 
-  # 软链
+  # mod_xml_curl(主体编译完后才能编)
+  ( cd "$FS_BUILD_DIR/freeswitch/src/mod/xml_int/mod_xml_curl" && make install )
+}
+
+# 在 /usr/bin 建软链,让 freeswitch / fs_cli 命令在 PATH 中直接可用。
+# 独立函数:do_install 每次都调用(放在 _fs_build_from_source 里会被幂等检查跳过)。
+_fs_install_symlinks() {
   ln -sf "$FS_PREFIX/bin/freeswitch" /usr/bin/freeswitch
   ln -sf "$FS_PREFIX/bin/fs_cli" /usr/bin/fs_cli
-
-  # mod_xml_curl
-  ( cd "$FS_BUILD_DIR/freeswitch/src/mod/xml_int/mod_xml_curl" && make install )
 }
 
 # 首次落地 conf 目录,不覆盖运维已修改的文件
@@ -190,9 +193,13 @@ do_install() {
   _fs_check_vars
   _fs_install_deps
   _fs_build_from_source
+  _fs_install_symlinks
   _fs_install_conf
   _fs_install_unit
-  systemctl enable --now freeswitch
+  systemctl enable freeswitch
+  # 显式 restart:重跑 install 时(幂等场景)freeswitch 可能已经在跑,
+  # 需要让新 conf / unit 立刻生效,与其他 service 模块约定一致。
+  systemctl restart freeswitch
   # freeswitch 启动较慢(加载几十个模块),timeout 60s
   wait_for_active freeswitch 60 || {
     journalctl -u freeswitch -n 100 --no-pager >&2
