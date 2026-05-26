@@ -130,7 +130,11 @@ do_install() {
   _kam_install_pkgs
   _kam_render
   _kam_install_dropin
-  systemctl enable --now kamailio
+  systemctl enable kamailio
+  # apt 装 kamailio 时 postinst 已 start 服务,用的是包默认 /etc/default/kamailio
+  # (只有 RUN_KAMAILIO=yes 缺 CFGFILE,kamailio 退化跑内置默认 listen 5060)
+  # 我们已经重写 /etc/default/kamailio 并渲染了 kamailio.cfg,必须 restart 让新配置生效
+  systemctl restart kamailio
   wait_for_active kamailio 30 || {
     journalctl -u kamailio -n 50 --no-pager >&2
     return 1

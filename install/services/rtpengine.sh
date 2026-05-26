@@ -88,7 +88,10 @@ do_install() {
   _rtpe_load_kernel_mod
   _rtpe_render
   _rtpe_install_dropin
-  systemctl enable --now ngcp-rtpengine-daemon
+  systemctl enable ngcp-rtpengine-daemon
+  # apt 装 ngcp-rtpengine 时 postinst 已 start,用的是默认 rtpengine.conf。
+  # 我们渲染了新 rtpengine.conf,必须 restart 让新配置生效。
+  systemctl restart ngcp-rtpengine-daemon
   wait_for_active ngcp-rtpengine-daemon 15 || {
     lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
     journalctl -u ngcp-rtpengine-daemon -n 50 --no-pager >&2
