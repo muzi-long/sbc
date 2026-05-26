@@ -1,0 +1,22 @@
+[Unit]
+Description=FreeSWITCH Modular Softswitch
+After=network-online.target syslog.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/usr/local/freeswitch/run/freeswitch.pid
+EnvironmentFile=-/etc/default/freeswitch
+ExecStart=/usr/local/freeswitch/bin/freeswitch -ncwait -nonat -nosql
+ExecStop=/usr/local/freeswitch/bin/freeswitch -stop
+Restart=always
+RestartSec=3
+LimitNOFILE=999999
+LimitNPROC=65535
+LimitCORE=infinity
+LimitSTACK=240
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

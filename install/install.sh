@@ -10,7 +10,7 @@ SERVICES_DIR="${INSTALL_SERVICES_DIR:-$SCRIPT_DIR/services}"
 # shellcheck source=lib/common.sh
 source "$LIB_DIR/common.sh"
 
-KNOWN_SERVICES=(kamailio rtpengine caddy)
+KNOWN_SERVICES=(kamailio rtpengine caddy freeswitch)
 
 usage() {
   cat <<EOF
@@ -27,18 +27,21 @@ ensure_prereqs() {
   # 入参:剩余的服务名列表(可能为空,表示交互式)
   # 全部服务都需要的基础工具
   local needed=(gnupg ca-certificates curl wget whiptail)
-  # 只在选了 rtpengine(或交互式可能选)时追加 dkms + headers
-  # 因为不知道用户在菜单里会选什么,保守地:只要服务名里有 rtpengine 或服务名为空就追加
-  local s want_rtpe=0
+  local s want_rtpe=0 want_fs=0
   if [ "$#" -eq 0 ]; then
     want_rtpe=1  # 交互式,可能选 rtpengine
+    want_fs=1    # 交互式,可能选 freeswitch
   else
     for s in "$@"; do
       [ "$s" = "rtpengine" ] && want_rtpe=1
+      [ "$s" = "freeswitch" ] && want_fs=1
     done
   fi
   if [ "$want_rtpe" -eq 1 ]; then
     needed+=(dkms "linux-headers-$(uname -r)")
+  fi
+  if [ "$want_fs" -eq 1 ]; then
+    needed+=(git cmake build-essential autoconf automake libtool libtool-bin pkg-config lsb-release uuid-dev libssl-dev yasm nasm)
   fi
   apt-get update -qq
   apt-get install -y "${needed[@]}"

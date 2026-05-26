@@ -22,6 +22,10 @@
 - [ ] `ss -lnup | grep -E ':15060|:2223'` 看到两个端口
 - [ ] `ss -lntp | grep -E ':80|:443|:15062'` 看到 80/443/15062
 - [ ] **填 dispatcher.list**:`sudo vi /etc/kamailio/dispatcher.list`,把示例 IP 改成你的真实上游网关,然后 `sudo -E ./install/install.sh reconfigure kamailio`
+- [ ] `sudo systemctl is-active freeswitch` = `active`
+- [ ] `sudo /usr/local/freeswitch/bin/fs_cli -x "status"` 能输出版本和上线时间
+- [ ] `sudo ss -lnup | grep -E ':5060|:5080'` 看到 FS SIP 端口
+- [ ] **首次安装预计 20-40 分钟**(源码编译耗时)
 
 ## 重启验收
 

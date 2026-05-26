@@ -8,7 +8,7 @@ setup() {
   # 让 install.sh 用 stub 当作 fake kamailio/rtpengine/caddy 模块
   STUB_SVC_DIR="$TEST_TMPDIR/services"
   mkdir -p "$STUB_SVC_DIR"
-  for s in kamailio rtpengine caddy; do
+  for s in kamailio rtpengine caddy freeswitch; do
     cp "$REPO_ROOT/install/services/_stub.sh" "$STUB_SVC_DIR/$s.sh"
   done
   export INSTALL_SERVICES_DIR="$STUB_SVC_DIR"
@@ -48,6 +48,7 @@ teardown() {
   [[ "$output" == *"kamailio"* ]]
   [[ "$output" == *"rtpengine"* ]]
   [[ "$output" == *"caddy"* ]]
+  [[ "$output" == *"freeswitch"* ]]
 }
 
 @test "install with no service in non-tty exits with hint" {
@@ -71,14 +72,14 @@ teardown() {
 }
 
 @test "real services dir loads each service.sh without syntax error" {
-  for s in kamailio rtpengine caddy; do
+  for s in kamailio rtpengine caddy freeswitch; do
     run bash -n "$REPO_ROOT/install/services/$s.sh"
     [ "$status" -eq 0 ]
   done
 }
 
 @test "real services dir defines do_install / do_reconfigure / do_health" {
-  for s in kamailio rtpengine caddy; do
+  for s in kamailio rtpengine caddy freeswitch; do
     run bash -c "source '$REPO_ROOT/install/lib/common.sh'; source '$REPO_ROOT/install/services/$s.sh'; declare -F do_install do_reconfigure do_health"
     [ "$status" -eq 0 ]
     [[ "$output" == *"do_install"* ]]

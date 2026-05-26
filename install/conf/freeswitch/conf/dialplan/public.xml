@@ -1,0 +1,31 @@
+<!--
+    NOTICE:
+
+    This context is usually accessed via the external sip profile listening on port 5080.
+    
+    It is recommended to have separate inbound and outbound contexts.  Not only for security
+    but clearing up why you would need to do such a thing.  You don't want outside un-authenticated
+    callers hitting your default context which allows dialing calls thru your providers and results 
+    in Toll Fraud.
+-->
+
+<!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
+<include>
+  <context name="public">
+      <extension name="My Echo Test">
+            <condition field="destination_number" expression="^echo|1234$">
+                <action application="answer" data=""/>
+                <action application="echo" data=""/>
+            </condition>
+        </extension>
+        <extension name="inbound-server">
+            <condition field="destination_number" expression="^([\da-zA-Z]{5,30})$">
+                <action application="ring_ready"/>
+                <action application="pre_answer" data=""/>
+		            <!--action application="set" data="transfer_ringback=local_stream://moh"/>
+		            <action application="set" data="instant_ringback=true"/-->
+                <action application="park" data=""/>
+            </condition>
+        </extension>
+  </context>
+</include>

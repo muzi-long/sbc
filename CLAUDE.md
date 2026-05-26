@@ -25,10 +25,11 @@ install/
 ├── install.env.example           # 变量样例(install.env 已 .gitignore)
 ├── lib/common.sh                 # require_root / detect_debian_bookworm / require_vars / render_tpl / wait_for_active
 ├── services/
-│   ├── kamailio.sh / rtpengine.sh / caddy.sh   # do_install / do_reconfigure / do_health
+│   ├── kamailio.sh / rtpengine.sh / caddy.sh / freeswitch.sh   # do_install / do_reconfigure / do_health
 │   └── _stub.sh                  # 仅供 bats 测试
 ├── conf/{kamailio,rtpengine,caddy}/            # 模板(*.tpl)+ 原样文件
-└── systemd/                                    # 三个 drop-in
+├── conf/freeswitch/conf/                       # freeswitch 参考 conf 树(原样拷贝,202 文件)
+└── systemd/                                    # 三个 drop-in + freeswitch.service(完整 unit)
 
 tests/bats/                       # 34 测试(纯函数 + dispatch)
 docs/superpowers/{specs,plans,checklists}/
@@ -37,7 +38,14 @@ docs/superpowers/{specs,plans,checklists}/
 ## 架构约定(改代码前必读)
 
 ### 服务模块同形
-每个 `services/<name>.sh` 暴露 **`do_install` / `do_reconfigure` / `do_health`** 三函数;主入口 `install.sh` 在子 shell 中 `source` 后调用对应函数。`KNOWN_SERVICES=(kamailio rtpengine caddy)` 在 `install.sh` 顶部硬编码 —— 加 freeswitch 时:`services/freeswitch.sh` + `conf/freeswitch/` + `systemd/freeswitch.service.d/` + 把名字加进 `KNOWN_SERVICES`,**主入口和 common.sh 零改动**。
+每个 `services/<name>.sh` 暴露 **`do_install` / `do_reconfigure` / `do_health`** 三函数;主入口 `install.sh` 在子 shell 中 `source` 后调用对应函数。`KNOWN_SERVICES=(kamailio rtpengine caddy freeswitch)` 在 `install.sh` 顶部硬编码。
+
+### freeswitch 编译策略
+- 源码编译:spandsp(fs 分支)→ sofia-sip(master)→ libks(v1.8.3)→ signalwire-c(v1.3.3)→ freeswitch(v1.10.12),版本与参考 Dockerfile 严格对齐
+- 幂等保护:`/usr/local/freeswitch/bin/freeswitch` 已存在则跳过全部编译步骤
+- conf 不覆盖:首次安装将 `install/conf/freeswitch/conf/` 原样拷入 `/usr/local/freeswitch/conf/`(仅当目录为空);后续 `reconfigure` 只 restart 服务,不动 conf 文件(同 dispatcher.list 策略)
+- 运行用户 root,完整 systemd unit(`/etc/systemd/system/freeswitch.service`),启动参数 `-ncwait -nonat -nosql`
+- `/data/{recordings,audios}` 在 `do_install` 时自动 mkdir
 
 ### 命名规则
 - 私有函数前缀 `_<svc>_xxx`(避免子 shell 中跨模块意外覆盖)

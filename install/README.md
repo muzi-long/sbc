@@ -47,17 +47,19 @@ sudo -E ./install/install.sh reconfigure kamailio
 
 ## 各服务必填变量
 
-| 变量 | kamailio | rtpengine | caddy |
-|------|:-:|:-:|:-:|
-| PUBLIC_IP / PRIVATE_IP | ✓ | ✓ | |
-| LISTEN_IFACE | ✓ | | |
-| SIP_*_PORT / KAM_ALIAS_* | ✓ | | |
-| DB_* / REDIS_* | ✓ | | |
-| RTPE_NG_PORT | ✓ | ✓ | |
-| RTPE_PORT_MIN/MAX | | ✓ | |
-| CADDY_*_DOMAIN / CADDY_*_UPSTREAM | | | ✓ |
+| 变量 | kamailio | rtpengine | caddy | freeswitch |
+|------|:-:|:-:|:-:|:-:|
+| PUBLIC_IP / PRIVATE_IP | ✓ | ✓ | | |
+| LISTEN_IFACE | ✓ | | | |
+| SIP_*_PORT / KAM_ALIAS_* | ✓ | | | |
+| DB_* / REDIS_* | ✓ | | | |
+| RTPE_NG_PORT | ✓ | ✓ | | |
+| RTPE_PORT_MIN/MAX | | ✓ | | |
+| CADDY_*_DOMAIN / CADDY_*_UPSTREAM | | | ✓ | |
 
 只装某个服务时，无关变量留空即可。
+
+> **freeswitch 无必填变量**。配置走 `/usr/local/freeswitch/conf/`：首次安装从 `install/conf/freeswitch/conf/` 原样拷入，后续 `reconfigure` 不覆盖运维已改动的文件。
 
 ## 验收（每次安装后跑一遍）
 
@@ -67,6 +69,14 @@ sudo systemctl is-enabled kamailio rtpengine-daemon caddy
 sudo lsmod | grep xt_RTPENGINE
 sudo ss -lnup | grep -E ':15060|:2223'
 sudo ss -lntp | grep -E ':80|:443|:15062'
+```
+
+如果安装了 freeswitch，额外验收：
+
+```bash
+sudo systemctl is-active freeswitch
+sudo /usr/local/freeswitch/bin/fs_cli -x "status" | head -5
+sudo ss -lnup | grep -E ':5060|:5080'
 ```
 
 重启宿主机后再跑一遍，所有服务应自动起来。

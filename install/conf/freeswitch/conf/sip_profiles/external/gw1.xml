@@ -1,0 +1,11 @@
+<include>
+        <gateway name="gw1">
+                <param name="realm" value="8.142.117.22:5060"/>
+                <param name="username" value="5002"/>
+                <param name="password" value="1234."/>
+		        <param name="from-user" value=""/>
+		        <param name="caller-id-in-from" value="true"/>
+                <param name="register" value="false"/>
+                <param name="register-proxy" value="nicaicai.top"/>
+        </gateway>
+</include>
