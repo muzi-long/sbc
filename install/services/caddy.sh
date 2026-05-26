@@ -3,7 +3,9 @@
 # 暴露 do_install / do_reconfigure / do_health,被 install.sh 在子 shell 中 source。
 # 依赖:已 source common.sh、UBUNTU_CODENAME 已导出。
 
-# ===== 必填变量(由主仓库 install.sh 顶部或环境注入) =====
+# ===== 必填变量(由调用 install.sh 的环境注入,例如 source install.env)=====
+# 用 `: "${X:=}"` 保护:若未注入,先设为空字符串,避免 set -u 报 unbound variable,
+# 后续 require_vars 会把空字符串识别为 missing 并报错列出。
 : "${CADDY_API_DOMAIN:=}"
 : "${CADDY_API_UPSTREAM:=}"
 : "${CADDY_APP_DOMAIN:=}"
@@ -11,7 +13,8 @@
 : "${CADDY_WEBRTC_DOMAIN:=}"
 : "${CADDY_WEBRTC_UPSTREAM:=}"
 
-_caddy_repo_root() {
+# 返回 install/ 目录的绝对路径(本仓库 install/ 子目录,内含 conf/、systemd/、services/ 等)
+_caddy_install_dir() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
 
@@ -32,11 +35,12 @@ _caddy_add_repo() {
   apt-get update
 }
 
+# 渲染 Caddyfile 到 /etc/caddy/,要求 caddy 用户已存在(由 apt install caddy 创建)
 _caddy_render() {
-  local repo dst="/etc/caddy/Caddyfile"
-  repo="$(_caddy_repo_root)"
+  local install_dir dst="/etc/caddy/Caddyfile"
+  install_dir="$(_caddy_install_dir)"
   install -d -m 0755 /etc/caddy
-  render_tpl "$repo/conf/caddy/Caddyfile.tpl" "$dst" \
+  render_tpl "$install_dir/conf/caddy/Caddyfile.tpl" "$dst" \
     "CADDY_API_DOMAIN=$CADDY_API_DOMAIN" \
     "CADDY_API_UPSTREAM=$CADDY_API_UPSTREAM" \
     "CADDY_APP_DOMAIN=$CADDY_APP_DOMAIN" \
@@ -50,10 +54,10 @@ _caddy_render() {
 }
 
 _caddy_install_dropin() {
-  local repo
-  repo="$(_caddy_repo_root)"
+  local install_dir
+  install_dir="$(_caddy_install_dir)"
   install -d -m 0755 /etc/systemd/system/caddy.service.d
-  install -m 0644 "$repo/systemd/caddy.service.d/override.conf" \
+  install -m 0644 "$install_dir/systemd/caddy.service.d/override.conf" \
     /etc/systemd/system/caddy.service.d/override.conf
   systemctl daemon-reload
 }
@@ -65,7 +69,7 @@ do_install() {
   _caddy_render
   _caddy_install_dropin
   systemctl enable --now caddy
-  sleep 3
+  sleep 3  # 等待 caddy 完成初始化
   systemctl is-active caddy >/dev/null || {
     journalctl -u caddy -n 50 --no-pager >&2
     return 1
@@ -78,7 +82,7 @@ do_reconfigure() {
   _caddy_render
   _caddy_install_dropin
   systemctl restart caddy
-  sleep 2
+  sleep 2  # 等待 caddy reload 完成
   systemctl is-active caddy >/dev/null || {
     journalctl -u caddy -n 50 --no-pager >&2
     return 1
