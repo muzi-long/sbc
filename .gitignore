@@ -1,2 +1,3 @@
 tests/bats/.bats-tmp/
 tests/bats/lib/
+install/install.env
