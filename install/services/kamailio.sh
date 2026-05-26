@@ -74,6 +74,8 @@ _kam_install_pkgs() {
     kamailio-extra-modules
   # 默认 disable 的坑:Ubuntu 包默认 /etc/default/kamailio 里 RUN_KAMAILIO=no
   sed -i 's/^#*RUN_KAMAILIO=.*/RUN_KAMAILIO=yes/' /etc/default/kamailio
+  grep -q '^RUN_KAMAILIO=yes' /etc/default/kamailio || \
+    echo 'RUN_KAMAILIO=yes' >> /etc/default/kamailio
 }
 
 # 渲染 kamailio.cfg + lua/dispatcher.list 到 /etc/kamailio/,
@@ -83,7 +85,7 @@ _kam_render() {
   install_dir="$(_kam_install_dir)"
   install -d -m 0755 /etc/kamailio
   render_tpl "$install_dir/conf/kamailio/kamailio.cfg.tpl" /etc/kamailio/kamailio.cfg \
-    "PUBLIC_IP=$PUBLIC_IP" "PRIVATE_IP=$PRIVATE_IP" "LISTEN_IFACE=$LISTEN_IFACE" \
+    "PUBLIC_IP=$PUBLIC_IP" "LISTEN_IFACE=$LISTEN_IFACE" \
     "SIP_UDP_PORT=$SIP_UDP_PORT" "SIP_TCP_PORT=$SIP_TCP_PORT" \
     "KAM_ALIAS_1=$KAM_ALIAS_1" "KAM_ALIAS_2=$KAM_ALIAS_2" \
     "DB_HOST=$DB_HOST" "DB_PORT=$DB_PORT" "DB_USER=$DB_USER" "DB_PASS=$DB_PASS" "DB_NAME=$DB_NAME" \
