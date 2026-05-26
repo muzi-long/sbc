@@ -31,6 +31,8 @@ alias="__KAM_ALIAS_1__"
 alias="__KAM_ALIAS_2__"
 listen=udp:__LISTEN_IFACE__:__SIP_UDP_PORT__ advertise __PUBLIC_IP__:__SIP_UDP_PORT__
 listen=tcp:__LISTEN_IFACE__:__SIP_TCP_PORT__
+# 同时绑 loopback,让 caddy(本机反代)可以走 127.0.0.1:port,无需知道 PRIVATE_IP
+listen=tcp:127.0.0.1:__SIP_TCP_PORT__
 tcp_connection_lifetime=3605
 tcp_max_connections=2048
 tcp_accept_no_cl=yes
