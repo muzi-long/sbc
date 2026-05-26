@@ -34,6 +34,8 @@ _fs_install_deps() {
 
 # 带重试的 git clone:GitHub 在国内访问偶发 GnuTLS / TLS 断连,重试 5 次
 # 用法:_fs_git_clone_retry DST_DIR URL [BRANCH]
+# 注意:不用 --depth 1,因为 libks 等仓库的 CMakeLists.txt 会读 git tag
+# 历史生成 changelog,shallow clone 会让 cmake 拿不到 v1.8.3^ 报错。
 _fs_git_clone_retry() {
   local dst="$1" url="$2" branch="${3:-}"
   local n=0 max=5
@@ -45,9 +47,9 @@ _fs_git_clone_retry() {
   while [ "$n" -lt "$max" ]; do
     n=$((n+1))
     if [ -n "$branch" ]; then
-      git clone --depth 1 -b "$branch" "$url" "$dst" && return 0
+      git clone -b "$branch" "$url" "$dst" && return 0
     else
-      git clone --depth 1 "$url" "$dst" && return 0
+      git clone "$url" "$dst" && return 0
     fi
     echo "[freeswitch] git clone $url 失败(第 $n/$max 次),5 秒后重试..." >&2
     rm -rf "$dst"
