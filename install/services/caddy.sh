@@ -31,8 +31,11 @@ _caddy_add_repo() {
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
     | gpg --batch --no-tty --yes --dearmor -o /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
   chmod 0644 /etc/apt/keyrings/caddy-stable-archive-keyring.gpg
-  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
-    > /etc/apt/sources.list.d/caddy-stable.list
+  # 自己写带 signed-by 的 list,不用 Cloudsmith 的 debian.deb.txt
+  # (那个文件不含 signed-by 字段,导致 apt 找不到信任密钥)
+  cat > /etc/apt/sources.list.d/caddy-stable.list <<EOF
+deb [signed-by=/etc/apt/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+EOF
   apt-get update -o Dir::Etc::sourcelist="sources.list.d/caddy-stable.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
 }
 
