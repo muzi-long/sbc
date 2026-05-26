@@ -48,3 +48,40 @@ require_vars() {
     return 1
   fi
 }
+
+# render_tpl SRC DST KEY=VAL [KEY=VAL ...]
+# 把 SRC 中所有 __KEY__ 替换为 VAL,写到 DST。完成后扫描残留占位符,
+# 残留即非零退出。值中可含 / & 等特殊字符(awk 字符串替换,非 sed)。
+render_tpl() {
+  local src="$1" dst="$2"
+  shift 2
+  if [ ! -r "$src" ]; then
+    echo "ERROR: 模板不存在: $src" >&2
+    return 1
+  fi
+  # 拼出 awk 程序:每个 kv 一条 gsub
+  # BEGIN 块中转义替换变量里的 \ 和 &,避免 gsub 把 & 解释为"匹配串"
+  local awk_begin='BEGIN{'
+  local awk_body='{ line=$0;'
+  local kv key val awk_args=()
+  local i=0
+  for kv in "$@"; do
+    key="${kv%%=*}"
+    val="${kv#*=}"
+    awk_args+=(-v "v${i}=$val")
+    awk_begin+=" gsub(/[\\\\&]/, \"\\\\\\\\&\", v${i});"
+    awk_body+=" gsub(/__${key}__/, v${i}, line);"
+    i=$((i+1))
+  done
+  awk_begin+='}'
+  awk_body+=' print line; }'
+  awk "${awk_args[@]}" "${awk_begin} ${awk_body}" "$src" > "$dst"
+
+  local leftover
+  leftover="$(grep -oE '__[A-Z][A-Z0-9_]*__' "$dst" | sort -u || true)"
+  if [ -n "$leftover" ]; then
+    echo "ERROR: 渲染后残留占位符:" >&2
+    echo "$leftover" >&2
+    return 1
+  fi
+}
