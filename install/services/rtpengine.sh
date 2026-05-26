@@ -75,9 +75,9 @@ _rtpe_render() {
 _rtpe_install_dropin() {
   local install_dir
   install_dir="$(_rtpe_install_dir)"
-  install -d -m 0755 /etc/systemd/system/rtpengine-daemon.service.d
-  install -m 0644 "$install_dir/systemd/rtpengine-daemon.service.d/override.conf" \
-    /etc/systemd/system/rtpengine-daemon.service.d/override.conf
+  install -d -m 0755 /etc/systemd/system/ngcp-rtpengine-daemon.service.d
+  install -m 0644 "$install_dir/systemd/ngcp-rtpengine-daemon.service.d/override.conf" \
+    /etc/systemd/system/ngcp-rtpengine-daemon.service.d/override.conf
   systemctl daemon-reload
 }
 
@@ -88,10 +88,10 @@ do_install() {
   _rtpe_load_kernel_mod
   _rtpe_render
   _rtpe_install_dropin
-  systemctl enable --now rtpengine-daemon
-  wait_for_active rtpengine-daemon 15 || {
+  systemctl enable --now ngcp-rtpengine-daemon
+  wait_for_active ngcp-rtpengine-daemon 15 || {
     lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
-    journalctl -u rtpengine-daemon -n 50 --no-pager >&2
+    journalctl -u ngcp-rtpengine-daemon -n 50 --no-pager >&2
     return 1
   }
   do_health
@@ -101,10 +101,10 @@ do_reconfigure() {
   _rtpe_check_vars
   _rtpe_render
   _rtpe_install_dropin
-  systemctl restart rtpengine-daemon
-  wait_for_active rtpengine-daemon 15 || {
+  systemctl restart ngcp-rtpengine-daemon
+  wait_for_active ngcp-rtpengine-daemon 15 || {
     lsmod | grep xt_RTPENGINE >&2 || echo "(hint: xt_RTPENGINE 内核模块未加载,可能 DKMS 编译失败)" >&2
-    journalctl -u rtpengine-daemon -n 50 --no-pager >&2
+    journalctl -u ngcp-rtpengine-daemon -n 50 --no-pager >&2
     return 1
   }
   do_health
@@ -114,7 +114,7 @@ do_health() {
   echo "--- rtpengine ---"
   rtpengine --version 2>/dev/null | head -1 || true
   lsmod | grep xt_RTPENGINE || echo "(xt_RTPENGINE 未加载)"
-  systemctl is-active rtpengine-daemon
-  systemctl is-enabled rtpengine-daemon
+  systemctl is-active ngcp-rtpengine-daemon
+  systemctl is-enabled ngcp-rtpengine-daemon
   ss -lnup 2>/dev/null | grep ":${RTPE_NG_PORT}" || echo "(NG 端口 ${RTPE_NG_PORT} 未在监听)"
 }

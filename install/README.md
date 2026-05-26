@@ -64,8 +64,8 @@ sudo -E ./install/install.sh reconfigure kamailio
 ## 验收（每次安装后跑一遍）
 
 ```bash
-sudo systemctl is-active kamailio rtpengine-daemon caddy
-sudo systemctl is-enabled kamailio rtpengine-daemon caddy
+sudo systemctl is-active kamailio ngcp-rtpengine-daemon caddy
+sudo systemctl is-enabled kamailio ngcp-rtpengine-daemon caddy
 sudo lsmod | grep xt_RTPENGINE
 sudo ss -lnup | grep -E ':15060|:2223'
 sudo ss -lntp | grep -E ':80|:443|:15062'

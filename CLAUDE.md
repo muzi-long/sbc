@@ -70,7 +70,8 @@ docs/superpowers/{specs,plans,checklists}/
 
 ### systemd
 - 三个 drop-in 在 `install/systemd/<unit>/override.conf`,加 `Restart=always`、ulimits、特定的 `After=`/`Wants=`
-- **不**写 `Requires=rtpengine-daemon.service`(rtpengine 可能不在本机)
+- **不**写 `Requires=ngcp-rtpengine-daemon.service`(rtpengine 可能不在本机)
+- Debian 12 包的 rtpengine **真实 unit 名是 `ngcp-rtpengine-daemon`**,`rtpengine-daemon` 只是 alias。**drop-in 必须放在真名目录**(`ngcp-rtpengine-daemon.service.d/`),否则 systemd 不为 alias 加载 drop-in。所有 `systemctl <verb>` 也用真名,避免显示 `is-enabled = alias` 之类混乱
 - rtpengine drop-in 有 `ConditionPathExists=/sys/module/xt_RTPENGINE` + `After=systemd-modules-load.service`,确保内核模块先就位
 - rtpengine **必须** `table = 0`(in-kernel)—— 参考的 docker 版用 `table = -1` 是 userspace,本仓库不要抄
 

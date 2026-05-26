@@ -16,8 +16,8 @@
 - [ ] whiptail 菜单弹出,默认三项均勾选,回车确认
 - [ ] 脚本顺序输出 `>>> install: kamailio`、`>>> install: rtpengine`、`>>> install: caddy`(顺序可能不同,但都出现)
 - [ ] 退出码 0
-- [ ] `systemctl is-active kamailio rtpengine-daemon caddy` 三行全是 `active`
-- [ ] `systemctl is-enabled kamailio rtpengine-daemon caddy` 三行全是 `enabled`
+- [ ] `systemctl is-active kamailio ngcp-rtpengine-daemon caddy` 三行全是 `active`
+- [ ] `systemctl is-enabled kamailio ngcp-rtpengine-daemon caddy` 三行全是 `enabled`
 - [ ] `lsmod | grep xt_RTPENGINE` 有输出
 - [ ] `ss -lnup | grep -E ':15060|:2223'` 看到两个端口
 - [ ] `ss -lntp | grep -E ':80|:443|:15062'` 看到 80/443/15062
