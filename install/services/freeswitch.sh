@@ -145,8 +145,12 @@ _fs_build_from_source() {
     ./configure
     make
     make install
-    make cd-sounds-install
-    make cd-moh-install
+    # cd-sounds-install / cd-moh-install 从 files.freeswitch.org 拉几个语言
+    # sounds 包(~200MB,8 个包),国内连接不稳定。SBC 场景一般用业务语音,
+    # 不依赖 FS 自带 sounds。失败不中断,运维需要时再 cd /usr/local/src/freeswitch
+    # 手动跑 make cd-sounds-install。
+    make cd-sounds-install || echo "[freeswitch] sounds 下载失败,跳过(SBC 通常用不到)" >&2
+    make cd-moh-install || echo "[freeswitch] moh 下载失败,跳过" >&2
   )
 
   # 软链
