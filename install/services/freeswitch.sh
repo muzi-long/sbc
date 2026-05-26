@@ -34,7 +34,7 @@ _fs_install_deps() {
     libopus-dev libvorbis-dev libogg-dev libflac-dev libavformat-dev libswscale-dev \
     libswresample-dev libavutil-dev libavcodec-dev libavfilter-dev libx11-dev \
     libfftw3-dev libpcap-dev libxml2-dev libuv1-dev libfltk1.3-dev sox netpbm \
-    liblua5.2-dev
+    liblua5.2-dev libpq-dev
 }
 
 # 带重试的 git clone:GitHub 在国内访问偶发 GnuTLS / TLS 断连,重试 5 次
