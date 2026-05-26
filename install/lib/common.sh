@@ -3,8 +3,6 @@
 # 共享工具函数。所有 shell 函数都用 `(... )` 子 shell 形式以隔离副作用,
 # 或在文档中显式说明会修改的全局变量。
 
-set -o pipefail
-
 require_root() {
   if [ "${_EUID_OVERRIDE:-${EUID:-$(id -u)}}" -ne 0 ]; then
     echo "ERROR: 必须以 root 运行(sudo)" >&2

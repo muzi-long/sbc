@@ -3,39 +3,39 @@ load 'helpers'
 
 setup() {
   source "$REPO_ROOT/install/lib/common.sh"
-  TMPDIR="$(mktemp -d)"
+  TEST_TMPDIR="$(mktemp -d)"
 }
 
 teardown() {
-  rm -rf "$TMPDIR"
+  rm -rf "$TEST_TMPDIR"
 }
 
 @test "detect_ubuntu reads codename from os-release file" {
-  cat > "$TMPDIR/os-release" <<EOF
+  cat > "$TEST_TMPDIR/os-release" <<EOF
 ID=ubuntu
 VERSION_ID="22.04"
 VERSION_CODENAME=jammy
 EOF
-  run detect_ubuntu "$TMPDIR/os-release"
+  run detect_ubuntu "$TEST_TMPDIR/os-release"
   [ "$status" -eq 0 ]
   [ "$output" = "jammy" ]
 }
 
 @test "detect_ubuntu fails on debian" {
-  cat > "$TMPDIR/os-release" <<EOF
+  cat > "$TEST_TMPDIR/os-release" <<EOF
 ID=debian
 VERSION_CODENAME=bookworm
 EOF
-  run detect_ubuntu "$TMPDIR/os-release"
+  run detect_ubuntu "$TEST_TMPDIR/os-release"
   [ "$status" -ne 0 ]
   [[ "$output" == *"Ubuntu"* ]]
 }
 
 @test "detect_ubuntu fails when codename missing" {
-  cat > "$TMPDIR/os-release" <<EOF
+  cat > "$TEST_TMPDIR/os-release" <<EOF
 ID=ubuntu
 EOF
-  run detect_ubuntu "$TMPDIR/os-release"
+  run detect_ubuntu "$TEST_TMPDIR/os-release"
   [ "$status" -ne 0 ]
 }
 
