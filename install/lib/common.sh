@@ -51,7 +51,7 @@ require_vars() {
 
 # render_tpl SRC DST KEY=VAL [KEY=VAL ...]
 # 把 SRC 中所有 __KEY__ 替换为 VAL,写到 DST。完成后扫描残留占位符,
-# 残留即非零退出。值中可含 / & 等特殊字符(awk 字符串替换,非 sed)。
+# 残留即非零退出。值中可含 / & \ 等任意字符(通过 ENVIRON 传值,不经 awk -v 的 C 风格转义)。
 render_tpl() {
   local src="$1" dst="$2"
   shift 2
@@ -59,23 +59,46 @@ render_tpl() {
     echo "ERROR: 模板不存在: $src" >&2
     return 1
   fi
-  # 拼出 awk 程序:每个 kv 一条 gsub
-  # BEGIN 块中转义替换变量里的 \ 和 &,避免 gsub 把 & 解释为"匹配串"
-  local awk_begin='BEGIN{'
-  local awk_body='{ line=$0;'
-  local kv key val awk_args=()
-  local i=0
+
+  # 把 KEY=VAL 列表 export 为 v0/v1/...,让 awk 通过 ENVIRON 数组读
+  # (awk -v 会对反斜杠做 C 风格转义展开,无法承载 DB_PASS 含 \ 等场景)
+  local kv key val i=0
+  local -a keys=()
   for kv in "$@"; do
     key="${kv%%=*}"
     val="${kv#*=}"
-    awk_args+=(-v "v${i}=$val")
-    awk_begin+=" gsub(/[\\\\&]/, \"\\\\\\\\&\", v${i});"
-    awk_body+=" gsub(/__${key}__/, v${i}, line);"
+    export "v${i}=$val"
+    keys+=("$key")
+    i=$((i+1))
+  done
+
+  # 拼 awk 程序:
+  # BEGIN 块从 ENVIRON 取出每个 v0/v1/...
+  # 主循环对每行用 index()+substr() 循环替换 __KEY__,避免 gsub 替换串
+  # 中 & 和 \ 的元字符语义(跨 BSD awk/gawk/mawk 均安全)。
+  local awk_begin='BEGIN{'
+  local awk_body='{ line=$0;'
+  local n=$i
+  i=0
+  while [ "$i" -lt "$n" ]; do
+    awk_begin+=" v${i}=ENVIRON[\"v${i}\"]; k${i}=\"__${keys[$i]}__\"; kl${i}=length(k${i});"
+    awk_body+=" { r=\"\"; t=line; while((p=index(t,k${i}))>0){r=r substr(t,1,p-1) v${i}; t=substr(t,p+kl${i})}; line=r t; }"
     i=$((i+1))
   done
   awk_begin+='}'
   awk_body+=' print line; }'
-  awk "${awk_args[@]}" "${awk_begin} ${awk_body}" "$src" > "$dst"
+
+  if ! awk "${awk_begin} ${awk_body}" "$src" > "$dst"; then
+    echo "ERROR: awk 渲染失败" >&2
+    return 1
+  fi
+
+  # 清理临时 export(不污染调用方)
+  i=0
+  while [ "$i" -lt "$n" ]; do
+    unset "v${i}"
+    i=$((i+1))
+  done
 
   local leftover
   leftover="$(grep -oE '__[A-Z][A-Z0-9_]*__' "$dst" | sort -u || true)"

@@ -44,3 +44,11 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(cat "$TEST_TMPDIR/out")" = "x-x" ]
 }
+
+@test "render_tpl preserves backslash in values" {
+  echo "path=__P__ pass=__Q__" > "$TEST_TMPDIR/in"
+  # bash 字面 \ 用 \\ 表示;传给 render_tpl 时是单个 \
+  run render_tpl "$TEST_TMPDIR/in" "$TEST_TMPDIR/out" 'P=C:\foo' 'Q=p\nw'
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_TMPDIR/out")" = 'path=C:\foo pass=p\nw' ]
+}
