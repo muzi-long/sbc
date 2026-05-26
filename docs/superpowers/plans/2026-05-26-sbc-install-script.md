@@ -19,7 +19,7 @@
 **Files:**
 - Create: `install/install.sh`
 - Create: `install/lib/common.sh`
-- Create: `install/.editorconfig`
+- Create: `.editorconfig`(仓库根目录,适用于整仓库)
 - Create: `tests/bats/run.sh`
 - Create: `tests/bats/helpers.bash`
 - Create: `tests/bats/test_smoke.bats`
@@ -114,7 +114,7 @@ Expected:
 - [ ] **Step 8: 提交**
 
 ```bash
-git add install/ tests/ .gitignore install/.editorconfig
+git add install/ tests/ .gitignore .editorconfig
 git commit -m "scaffold install dir + bats test harness"
 ```
 
