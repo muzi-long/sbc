@@ -28,7 +28,7 @@ _fs_install_deps() {
     libsqlite3-dev libcurl4-openssl-dev libpcre3-dev libspeex-dev libspeexdsp-dev \
     libldns-dev libedit-dev libtiff-dev libjpeg-dev libpng-dev libsndfile1-dev \
     libopus-dev libvorbis-dev libogg-dev libflac-dev libavformat-dev libswscale-dev \
-    libavresample-dev libavutil-dev libavcodec-dev libx11-dev \
+    libswresample-dev libavutil-dev libavcodec-dev libavfilter-dev libx11-dev \
     libfftw3-dev libpcap-dev libxml2-dev libuv1-dev libfltk1.3-dev sox netpbm
 }
 
