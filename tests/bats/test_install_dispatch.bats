@@ -59,3 +59,28 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(grep -c 'stub:install' "$STUB_LOG")" -eq 2 ]
 }
+
+@test "install all dispatches kamailio rtpengine caddy via menu autopick" {
+  # 模拟交互式终端 + 自动选中全部
+  # whiptail 不可用时跳过(CI 容器里通常没装)
+  command -v whiptail >/dev/null 2>&1 || skip "whiptail 不可用"
+  # 这条测试需要 expect/真实 tty,作为占位;真机 smoke 验证
+  skip "需要交互式终端 + whiptail"
+}
+
+@test "real services dir loads each service.sh without syntax error" {
+  for s in kamailio rtpengine caddy; do
+    run bash -n "$REPO_ROOT/install/services/$s.sh"
+    [ "$status" -eq 0 ]
+  done
+}
+
+@test "real services dir defines do_install / do_reconfigure / do_health" {
+  for s in kamailio rtpengine caddy; do
+    run bash -c "source '$REPO_ROOT/install/lib/common.sh'; source '$REPO_ROOT/install/services/$s.sh'; declare -F do_install do_reconfigure do_health"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"do_install"* ]]
+    [[ "$output" == *"do_reconfigure"* ]]
+    [[ "$output" == *"do_health"* ]]
+  done
+}
