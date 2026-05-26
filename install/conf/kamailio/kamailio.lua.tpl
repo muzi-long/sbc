@@ -141,13 +141,10 @@ function ksr_request_route()
         end
     end
 
-    if KSR.is_ACK() or KSR.is_BYE() then
+    -- in-dialog 转发:ACK/BYE/INFO 都是端到端消息,由目标 UA(freeswitch 或网关)
+    -- 处理。kamailio 不要代答,按 Request-URI 转发(loose_route 已把 RURI 指向下一跳)。
+    if KSR.is_ACK() or KSR.is_BYE() or KSR.is_INFO() then
         ksr_route_relay()
-    end
-
-    if KSR.is_INFO() then
-        KSR.sl.sl_send_reply(200, "OK");
-        KSR.x.exit();
     end
 
     if KSR.is_UPDATE() then
