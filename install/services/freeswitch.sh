@@ -32,6 +32,31 @@ _fs_install_deps() {
     libfftw3-dev libpcap-dev libxml2-dev libuv1-dev libfltk1.3-dev sox netpbm
 }
 
+# 带重试的 git clone:GitHub 在国内访问偶发 GnuTLS / TLS 断连,重试 5 次
+# 用法:_fs_git_clone_retry DST_DIR URL [BRANCH]
+_fs_git_clone_retry() {
+  local dst="$1" url="$2" branch="${3:-}"
+  local n=0 max=5
+  if [ -d "$dst/.git" ]; then
+    return 0
+  fi
+  # 清掉之前可能的半成品目录
+  rm -rf "$dst"
+  while [ "$n" -lt "$max" ]; do
+    n=$((n+1))
+    if [ -n "$branch" ]; then
+      git clone --depth 1 -b "$branch" "$url" "$dst" && return 0
+    else
+      git clone --depth 1 "$url" "$dst" && return 0
+    fi
+    echo "[freeswitch] git clone $url 失败(第 $n/$max 次),5 秒后重试..." >&2
+    rm -rf "$dst"
+    sleep 5
+  done
+  echo "ERROR: git clone $url 重试 $max 次仍失败" >&2
+  return 1
+}
+
 # 源码编译(幂等:freeswitch 二进制已存在则跳过)
 _fs_build_from_source() {
   if [ -x "$FS_PREFIX/bin/freeswitch" ]; then
@@ -40,34 +65,29 @@ _fs_build_from_source() {
   fi
   install -d -m 0755 "$FS_BUILD_DIR"
 
+  # 提高 git http 缓冲、关闭 smart-http 压缩(国内访问 GitHub 大仓库更稳)
+  git config --global http.postBuffer 524288000 || true
+  git config --global http.lowSpeedLimit 1000 || true
+  git config --global http.lowSpeedTime 60 || true
+
   # spandsp(fs 分支)
-  if [ ! -d "$FS_BUILD_DIR/spandsp" ]; then
-    git clone -b fs https://github.com/freeswitch/spandsp.git "$FS_BUILD_DIR/spandsp"
-  fi
+  _fs_git_clone_retry "$FS_BUILD_DIR/spandsp" https://github.com/freeswitch/spandsp.git fs
   ( cd "$FS_BUILD_DIR/spandsp" && ./bootstrap.sh -j && ./configure && make && make install )
 
   # sofia-sip(master 分支)
-  if [ ! -d "$FS_BUILD_DIR/sofia-sip" ]; then
-    git clone https://github.com/freeswitch/sofia-sip.git "$FS_BUILD_DIR/sofia-sip"
-  fi
+  _fs_git_clone_retry "$FS_BUILD_DIR/sofia-sip" https://github.com/freeswitch/sofia-sip.git
   ( cd "$FS_BUILD_DIR/sofia-sip" && ./bootstrap.sh -j && ./configure && make && make install )
 
   # libks v1.8.3
-  if [ ! -d "$FS_BUILD_DIR/libks" ]; then
-    git clone -b v1.8.3 https://github.com/signalwire/libks.git "$FS_BUILD_DIR/libks"
-  fi
+  _fs_git_clone_retry "$FS_BUILD_DIR/libks" https://github.com/signalwire/libks.git v1.8.3
   ( cd "$FS_BUILD_DIR/libks" && cmake . && make && make install && ldconfig )
 
   # signalwire-c v1.3.3
-  if [ ! -d "$FS_BUILD_DIR/signalwire-c" ]; then
-    git clone -b v1.3.3 https://github.com/signalwire/signalwire-c.git "$FS_BUILD_DIR/signalwire-c"
-  fi
+  _fs_git_clone_retry "$FS_BUILD_DIR/signalwire-c" https://github.com/signalwire/signalwire-c.git v1.3.3
   ( cd "$FS_BUILD_DIR/signalwire-c" && cmake . && make && make install && ldconfig )
 
   # freeswitch 主体 v1.10.12
-  if [ ! -d "$FS_BUILD_DIR/freeswitch" ]; then
-    git clone -b "$FS_VERSION" https://github.com/signalwire/freeswitch.git "$FS_BUILD_DIR/freeswitch"
-  fi
+  _fs_git_clone_retry "$FS_BUILD_DIR/freeswitch" https://github.com/signalwire/freeswitch.git "$FS_VERSION"
   (
     cd "$FS_BUILD_DIR/freeswitch"
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:${PKG_CONFIG_PATH:-}
