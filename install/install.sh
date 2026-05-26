@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install/install.sh — 主入口
 set -euo pipefail
-trap 'echo "[FAIL] line $LINENO" >&2' ERR
+trap 'code=$?; case $code in 1|2) ;; *) echo "[FAIL] line $LINENO (exit=$code)" >&2 ;; esac' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
@@ -59,8 +59,7 @@ do_dispatch() {
   if [ "${#services[@]}" -eq 0 ]; then
     local picked
     picked="$(pick_services_via_menu)" || return 1
-    # shellcheck disable=SC2206
-    services=($picked)
+    IFS=' ' read -r -a services <<< "$picked"
     if [ "${#services[@]}" -eq 0 ]; then
       echo "ERROR: 未选择任何服务" >&2
       return 1
