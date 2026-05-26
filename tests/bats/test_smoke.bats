@@ -7,6 +7,5 @@ load 'helpers'
 }
 
 @test "bash version >= 4" {
-  run bash --version
-  [ "$status" -eq 0 ]
+  [ "${BASH_VERSINFO[0]}" -ge 4 ]
 }
