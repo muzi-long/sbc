@@ -23,6 +23,9 @@
 : "${REDIS_PASS:=}"
 : "${RTPE_NG_PORT:=2223}"
 : "${KAMAILIO_BRANCH:=58}"
+# kamailio 内存配置(MB)
+: "${SHM_MEMORY:=64}"
+: "${PKG_MEMORY:=8}"
 
 # 返回 install/ 目录的绝对路径
 _kam_install_dir() {
@@ -35,7 +38,8 @@ _kam_check_vars() {
     KAM_ALIAS_1 KAM_ALIAS_2 \
     DB_HOST DB_PORT DB_USER DB_PASS DB_NAME \
     REDIS_HOST REDIS_PORT \
-    RTPE_NG_PORT KAMAILIO_BRANCH
+    RTPE_NG_PORT KAMAILIO_BRANCH \
+    SHM_MEMORY PKG_MEMORY
 }
 
 _kam_check_iface() {
@@ -74,17 +78,19 @@ _kam_install_pkgs() {
     kamailio-utils-modules \
     kamailio-extra-modules \
     kamailio-lua-modules
-  # /etc/default/kamailio 的坑(Debian 12 包):
-  # - 默认 RUN_KAMAILIO=no(systemd unit 不检查这个,但 init.d 检查)
-  # - 默认**没有** CFGFILE / SHM_MEMORY / PKG_MEMORY,而 systemd ExecStart 引用了它们
-  #   (`-f $CFGFILE`),为空时 kamailio 退化成跑内置默认 cfg → 你的配置完全没生效
-  # 直接重写整个文件,确保所有变量都有值。
-  cat > /etc/default/kamailio <<'EOF'
+}
+
+# 重写 /etc/default/kamailio(Debian 12 包默认只有 RUN_KAMAILIO,缺 CFGFILE/SHM_MEMORY/
+# PKG_MEMORY 等 systemd ExecStart 引用的变量;$CFGFILE 为空时 kamailio 退化跑内置默认 cfg,
+# 用户的 /etc/kamailio/kamailio.cfg 完全没生效)。
+# 独立函数:install 和 reconfigure 都调用,确保改 install.env 内存参数后 reconfigure 生效。
+_kam_render_default_file() {
+  cat > /etc/default/kamailio <<EOF
 # Managed by sbc install script. Do not edit; rerun reconfigure instead.
 RUN_KAMAILIO=yes
 CFGFILE=/etc/kamailio/kamailio.cfg
-SHM_MEMORY=64
-PKG_MEMORY=8
+SHM_MEMORY=${SHM_MEMORY}
+PKG_MEMORY=${PKG_MEMORY}
 USER=kamailio
 GROUP=kamailio
 EOF
@@ -116,6 +122,7 @@ _kam_render() {
   fi
   chown kamailio:kamailio /etc/kamailio/kamailio.cfg
   chmod 640 /etc/kamailio/kamailio.cfg  # 含 DB 密码,严格保护
+  _kam_render_default_file
 }
 
 _kam_install_dropin() {
