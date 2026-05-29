@@ -118,6 +118,6 @@ Debian 12 包的 systemd unit `ExecStart=... -f $CFGFILE -m $SHM_MEMORY -M $PKG_
 
 - 不要把 `install.env`(真实密钥版)commit 进仓库 —— `.gitignore` 已屏蔽
 - 不要在 macOS 上跑 `apt-get`/`systemctl`/`modprobe`/`caddy` 这些命令测试(它们没有)。真机 smoke 才测这些
-- 不要修改 `install/conf/kamailio/kamailio.lua`(业务逻辑,原样从参考目录拷贝)
+- 谨慎修改 `install/conf/kamailio/kamailio.lua`(业务逻辑,原样从参考目录拷贝);确需变更时先和用户对齐范围,纯清理(死代码、未使用常量等)可直接做
 - 不要给服务模块加 `set -e`(install.sh 已 `set -euo pipefail`,子 shell 继承)
 - 不要给 install.sh 添加交互式询问"变量值"的 prompt(只有"选哪些服务"是交互的,值靠 install.env)

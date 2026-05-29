@@ -1,7 +1,7 @@
-FLT_INTERNAL = 20
-FLT_EXTERNAL = 21
-FLB_INTERNAL = 22
-FLB_EXTERNAL = 23
+FLT_INT2EXT = 20
+FLT_EXT2INT = 21
+FLT_INT2INT = 22
+FLT_EXT2EXT = 23
 FLT_NATS = 5
 FLB_NATB = 6
 FLB_NATSIPPING = 7
@@ -10,6 +10,7 @@ WEBRTC_UAS = 26
 MEDIA_EXTERNAL_TO_INTERNAL = " direction=pub direction=priv"
 MEDIA_INTERNAL_TO_EXTERNAL = " direction=priv direction=pub"
 MEDIA_INTERNAL_TO_INTERNAL = " direction=priv direction=priv"
+MEDIA_EXTERNAL_TO_EXTERNAL = " direction=pub direction=pub"
 USER_AGENT_LIST = {
     "JsSIP",
     "Telephone",
@@ -46,9 +47,9 @@ function ksr_request_route()
                     KSR.setflag(WEBRTC_UAS);
                 end
             end
-            KSR.setflag(FLT_INTERNAL);
+            KSR.setflag(FLT_INT2EXT);
         else
-            KSR.setflag(FLT_EXTERNAL);
+            KSR.setflag(FLT_EXT2INT);
         end
         ksr_rtp_offer()
         KSR.tm.t_on_branch("ksr_branch_manage");
@@ -65,7 +66,7 @@ function ksr_request_route()
                 KSR.sl.sl_send_reply(503, "unavailable");
                 KSR.x.exit()
             end
-            KSR.setflag(FLT_EXTERNAL);
+            KSR.setflag(FLT_EXT2INT);
             ksr_rtp_offer()
             if KSR.tm.t_is_set("onreply_route") < 0 then
                 KSR.tm.t_on_reply("ksr_onreply_manage");
@@ -91,7 +92,7 @@ function ksr_request_route()
             if KSR.pv.gete('$proto') == "ws" or KSR.pv.gete('$proto') == "wss" then
                 KSR.setflag(WEBRTC_UAC);
             end
-            KSR.setflag(FLT_EXTERNAL);
+            KSR.setflag(FLT_EXT2INT);
             ksr_rtp_offer()
             if KSR.tm.t_is_set("onreply_route") < 0 then
                 KSR.tm.t_on_reply("ksr_onreply_manage");
@@ -107,7 +108,7 @@ function ksr_request_route()
         elseif KSR.dispatcher.ds_is_from_list("1", 3) > 0 then
             if KSR.is_myself_turi() then
                 KSR.info("来自FreeSWITCH的呼叫,转发给本地" .. KSR.pv.gete("$fU") .. " => " .. KSR.pv.gete("$tU") .. "\n")
-                KSR.setflag(FLT_INTERNAL);
+                KSR.setflag(FLT_INT2EXT);
                 if KSR.htable.sht_gete("sips", KSR.pv.gete("$tU")) == "webrtc" then
                     KSR.setflag(WEBRTC_UAS);
                 end
@@ -122,7 +123,7 @@ function ksr_request_route()
                 ksr_route_location();
             else
                 KSR.info("来自FreeSWITCH的人工呼叫,转发给线路" .. KSR.pv.gete("$fU") .. " => " .. KSR.pv.gete("$tU") .. "\n")
-                KSR.setflag(FLT_INTERNAL);
+                KSR.setflag(FLT_INT2EXT);
                 ksr_rtp_offer()
                 if KSR.tm.t_is_set("onreply_route") < 0 then
                     KSR.tm.t_on_reply("ksr_onreply_manage");
@@ -154,9 +155,9 @@ function ksr_request_route()
                     KSR.setflag(WEBRTC_UAS);
                 end
             end
-            KSR.setflag(FLT_INTERNAL);
+            KSR.setflag(FLT_INT2EXT);
         else
-            KSR.setflag(FLT_EXTERNAL);
+            KSR.setflag(FLT_EXT2INT);
         end
         ksr_rtp_offer()
         KSR.tm.t_on_branch("ksr_branch_manage");
@@ -324,7 +325,7 @@ end
 
 function ksr_branch_manage()
     ksr_route_natmanage()
-    if KSR.isflagset(FLT_EXTERNAL) then
+    if KSR.isflagset(FLT_EXT2INT) then
         KSR.rr.record_route()
     else
         KSR.rr.record_route_advertised_address("__PRIVATE_IP__:__SIP_UDP_PORT__")
@@ -346,10 +347,12 @@ function ksr_rtp_offer()
     end
 
     local direction
-    if KSR.isflagset(FLT_INTERNAL) then
+    if KSR.isflagset(FLT_INT2EXT) then
         direction = MEDIA_INTERNAL_TO_EXTERNAL
-    elseif KSR.isflagset(FLT_EXTERNAL) then
+    elseif KSR.isflagset(FLT_EXT2INT) then
         direction = MEDIA_EXTERNAL_TO_INTERNAL
+    elseif KSR.isflagset(FLT_EXT2EXT) then
+        direction = MEDIA_EXTERNAL_TO_EXTERNAL
     else
         direction = MEDIA_INTERNAL_TO_INTERNAL
     end
@@ -370,10 +373,12 @@ function ksr_rtp_answer()
         end
 
         local direction
-        if KSR.isflagset(FLT_INTERNAL) then
+        if KSR.isflagset(FLT_INT2EXT) then
             direction = MEDIA_EXTERNAL_TO_INTERNAL
-        elseif KSR.isflagset(FLT_EXTERNAL) then
+        elseif KSR.isflagset(FLT_EXT2INT) then
             direction = MEDIA_INTERNAL_TO_EXTERNAL
+        elseif KSR.isflagset(FLT_EXT2EXT) then
+            direction = MEDIA_EXTERNAL_TO_EXTERNAL
         else
             direction = MEDIA_INTERNAL_TO_INTERNAL
         end
@@ -423,22 +428,6 @@ function ksr_failure_manage()
     KSR.rtpengine.rtpengine_delete("")
 end
 
-function ksr_uuid()
-    local seed = { 'e', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' }
-    local tb = {}
-    for i = 1, 32 do
-        table.insert(tb, seed[math.random(1, 16)])
-    end
-    local sid = table.concat(tb)
-    return string.format('%s-%s-%s-%s-%s',
-        string.sub(sid, 1, 8),
-        string.sub(sid, 9, 12),
-        string.sub(sid, 13, 16),
-        string.sub(sid, 17, 20),
-        string.sub(sid, 21, 32)
-    )
-end
-
 function ksr_table_to_json(tbl)
     local json = "{"
     local first = true
@@ -460,7 +449,7 @@ function ksr_table_to_json(tbl)
         elseif type(v) == "string" then
             json = json .. '"' .. v .. '"'
         elseif type(v) == "table" then
-            json = json .. table_to_json(v)
+            json = json .. ksr_table_to_json(v)
         else
             error("Invalid value type: " .. type(v))
         end

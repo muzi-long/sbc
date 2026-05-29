@@ -13,10 +13,10 @@
 #!define FLT_NATS 5
 #!define FLB_NATB 6
 #!define FLB_NATSIPPING 7
-#!define FLT_INTERNAL 20
-#!define FLT_EXTERNAL 21
-#!define FLB_INTERNAL 22
-#!define FLB_EXTERNAL 23
+#!define FLT_INT2EXT 20
+#!define FLT_EXT2INT 21
+#!define FLT_INT2INT 22
+#!define FLT_EXT2EXT 23
 #!define WEBRTC_UAC 25
 #!define WEBRTC_UAS 26
 
