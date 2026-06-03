@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SBC 文章封面</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .cover {
+    width: 1920px;
+    height: 1080px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+    transform-origin: top left;
+    /* 缩放到屏幕显示用,截图时建议用全分辨率 */
+  }
+
+  /* 背景装饰:网格 */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* 背景装饰:光晕 */
+  .glow-1 {
+    position: absolute;
+    top: -200px;
+    left: -200px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .glow-2 {
+    position: absolute;
+    bottom: -200px;
+    right: -200px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  /* 主内容容器 */
+  .content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    padding: 100px 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* 顶部标识区 */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 12px 28px;
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 2px solid rgba(251, 191, 36, 0.4);
+    border-radius: 50px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+
+  .header-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.4), transparent);
+  }
+
+  /* 标题区 */
+  .title-area {
+    margin-top: 60px;
+  }
+
+  .main-title {
+    font-size: 110px;
+    font-weight: 900;
+    color: #f8fafc;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+
+  .main-title .highlight {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 38px;
+    color: #94a3b8;
+    font-weight: 400;
+    line-height: 1.4;
+    margin-top: 30px;
+    max-width: 1400px;
+  }
+
+  /* 中间架构图 */
+  .architecture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin: 60px 0;
+  }
+
+  .node {
+    background: rgba(30, 41, 59, 0.8);
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    border-radius: 16px;
+    padding: 30px 40px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .node-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .node-label {
+    color: #e2e8f0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .node-sub {
+    color: #64748b;
+    font-size: 16px;
+    margin-top: 6px;
+  }
+
+  .node.center {
+    border-color: rgba(251, 191, 36, 0.6);
+    background: rgba(251, 191, 36, 0.08);
+    transform: scale(1.15);
+  }
+
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .arrow-line {
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #fbbf24);
+    position: relative;
+  }
+
+  .arrow-line.dashed {
+    background: none;
+    border-top: 3px dashed #fbbf24;
+  }
+
+  .arrow-label {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* 底部信息 */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .keywords {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .keyword {
+    padding: 10px 24px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 8px;
+    font-size: 20px;
+    font-family: "SF Mono", Monaco, monospace;
+  }
+
+  .meta {
+    color: #64748b;
+    font-size: 22px;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  .meta .author {
+    color: #cbd5e1;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="grid"></div>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+
+    <div class="content">
+      <!-- 顶部 -->
+      <div class="header">
+        <span class="tag">VOIP · BACKEND</span>
+        <div class="header-line"></div>
+      </div>
+
+      <!-- 标题 -->
+      <div class="title-area">
+        <h1 class="main-title">
+          读懂 <span class="highlight">200 行 Lua</span>
+        </h1>
+        <p class="subtitle">
+          一个生产级 SBC 是怎么把 SIP 信令和 RTP 媒体串起来的
+        </p>
+      </div>
+
+      <!-- 架构图 -->
+      <div class="architecture">
+        <div class="node">
+          <div class="node-icon">📞</div>
+          <div class="node-label">SIP Gateway</div>
+          <div class="node-sub">外部网关 / WebRTC</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">SIP</div>
+          <div class="arrow-line"></div>
+          <div class="arrow-line dashed"></div>
+          <div class="arrow-label">RTP</div>
+        </div>
+
+        <div class="node center">
+          <div class="node-icon">⚡</div>
+          <div class="node-label">kamailio + rtpengine</div>
+          <div class="node-sub">SBC · in-kernel media proxy</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">SIP</div>
+          <div class="arrow-line"></div>
+          <div class="arrow-line dashed"></div>
+          <div class="arrow-label">RTP</div>
+        </div>
+
+        <div class="node">
+          <div class="node-icon">🎙️</div>
+          <div class="node-label">FreeSWITCH</div>
+          <div class="node-sub">媒体 / 业务</div>
+        </div>
+      </div>
+
+      <!-- 底部 -->
+      <div class="footer">
+        <div class="keywords">
+          <span class="keyword">#Kamailio</span>
+          <span class="keyword">#SIP</span>
+          <span class="keyword">#WebRTC</span>
+          <span class="keyword">#RTP</span>
+        </div>
+        <div class="meta">
+          <div class="author">技术分享</div>
+          <div>从 INVITE 到 BYE,全流程拆解</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

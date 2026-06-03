@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SBC 安装文章封面</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0c1322;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .cover {
+    width: 1920px;
+    height: 1080px;
+    background: linear-gradient(135deg, #0c1322 0%, #1a2a4a 50%, #0c1322 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 终端风格背景代码雨 */
+  .code-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.08;
+    color: #4ade80;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre;
+    padding: 40px;
+    user-select: none;
+  }
+
+  /* 背景:网格 */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74, 222, 128, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74, 222, 128, 0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* 光晕 */
+  .glow-1 {
+    position: absolute;
+    top: -200px;
+    right: -200px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(74, 222, 128, 0.18) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .glow-2 {
+    position: absolute;
+    bottom: -200px;
+    left: -200px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    padding: 100px 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* 顶部 */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 12px 28px;
+    background: rgba(74, 222, 128, 0.12);
+    color: #4ade80;
+    border: 2px solid rgba(74, 222, 128, 0.4);
+    border-radius: 50px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+
+  .header-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(74, 222, 128, 0.4), transparent);
+  }
+
+  /* 标题 */
+  .title-area {
+    margin-top: 40px;
+  }
+
+  .main-title {
+    font-size: 108px;
+    font-weight: 900;
+    color: #f1f5f9;
+    line-height: 1.1;
+    letter-spacing: -2px;
+  }
+
+  .main-title .highlight {
+    background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 38px;
+    color: #94a3b8;
+    font-weight: 400;
+    line-height: 1.4;
+    margin-top: 32px;
+    max-width: 1400px;
+  }
+
+  /* 中间终端窗口 */
+  .terminal {
+    margin: 40px 0;
+    background: rgba(15, 23, 42, 0.85);
+    border: 2px solid rgba(74, 222, 128, 0.3);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    background: rgba(30, 41, 59, 0.9);
+    border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+    gap: 12px;
+  }
+
+  .terminal-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #eab308; }
+  .dot-green { background: #22c55e; }
+
+  .terminal-title {
+    margin-left: 16px;
+    color: #94a3b8;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 18px;
+  }
+
+  .terminal-body {
+    padding: 28px 36px;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 24px;
+    line-height: 1.7;
+  }
+
+  .prompt { color: #4ade80; }
+  .cmd { color: #e2e8f0; }
+  .comment { color: #64748b; }
+  .arg { color: #fbbf24; }
+  .out { color: #94a3b8; }
+  .ok { color: #4ade80; font-weight: 600; }
+
+  /* 底部 */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .keywords {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .keyword {
+    padding: 10px 22px;
+    background: rgba(74, 222, 128, 0.1);
+    color: #86efac;
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    border-radius: 8px;
+    font-size: 20px;
+    font-family: "SF Mono", Monaco, monospace;
+  }
+
+  .meta {
+    color: #64748b;
+    font-size: 22px;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  .meta .author {
+    color: #cbd5e1;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="grid"></div>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+
+    <div class="content">
+      <!-- 顶部 -->
+      <div class="header">
+        <span class="tag">DEVOPS · DEBIAN 12</span>
+        <div class="header-line"></div>
+      </div>
+
+      <!-- 标题 -->
+      <div class="title-area">
+        <h1 class="main-title">
+          从零搭一台 <span class="highlight">SBC</span>
+        </h1>
+        <p class="subtitle">
+          我的 Debian 12 自动化部署方案<br/>
+          kamailio · rtpengine · FreeSWITCH
+        </p>
+      </div>
+
+      <!-- 终端窗口 -->
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot dot-red"></div>
+          <div class="terminal-dot dot-yellow"></div>
+          <div class="terminal-dot dot-green"></div>
+          <div class="terminal-title">root@sbc-prod ~ #</div>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">$</span> <span class="cmd">sudo -E ./install/install.sh</span> <span class="arg">install</span></div>
+          <div><span class="out">>>> install: kamailio</span>     <span class="ok">[OK] active (running)</span></div>
+          <div><span class="out">>>> install: rtpengine</span>    <span class="ok">[OK] xt_RTPENGINE loaded</span></div>
+          <div><span class="out">>>> install: freeswitch</span>   <span class="ok">[OK] FreeSWITCH v1.10.12</span></div>
+          <div><span class="comment"># 一台能打电话的 SBC,15 分钟搞定</span></div>
+        </div>
+      </div>
+
+      <!-- 底部 -->
+      <div class="footer">
+        <div class="keywords">
+          <span class="keyword">#Kamailio</span>
+          <span class="keyword">#RTPEngine</span>
+          <span class="keyword">#FreeSWITCH</span>
+          <span class="keyword">#Debian12</span>
+          <span class="keyword">#Bash</span>
+        </div>
+        <div class="meta">
+          <div class="author">技术分享</div>
+          <div>VoIP / SBC 自动化部署</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
