@@ -145,16 +145,37 @@ _fs_build_from_source() {
     ./configure
     make
     make install
-    # cd-sounds-install / cd-moh-install 从 files.freeswitch.org 拉几个语言
-    # sounds 包(~200MB,8 个包),国内连接不稳定。SBC 场景一般用业务语音,
-    # 不依赖 FS 自带 sounds。失败不中断,运维需要时再 cd /usr/local/src/freeswitch
-    # 手动跑 make cd-sounds-install。
-    make cd-sounds-install || echo "[freeswitch] sounds 下载失败,跳过(SBC 通常用不到)" >&2
-    make cd-moh-install || echo "[freeswitch] moh 下载失败,跳过" >&2
   )
+  # 不跑 make cd-sounds-install / cd-moh-install:files.freeswitch.org 国内
+  # 龟速 + 8 个包共 ~670MB,曾让编译拖到数小时还失败。改用仓库自带的
+  # music-8000 tarball,SBC 场景够用(do_install 顶层调用)。
 
   # mod_xml_curl(主体编译完后才能编)
   ( cd "$FS_BUILD_DIR/freeswitch/src/mod/xml_int/mod_xml_curl" && make install )
+}
+
+# 解压仓库自带的 sounds tarball 到 $FS_PREFIX/sounds/。
+# 上游 files.freeswitch.org 国内龟速,直接把 ~14MB 的 music-8000 包放仓库里。
+# tarball 解压结构:music/<rate>/*.wav,直接铺到 sounds/ 顶层即可。
+# 幂等:目标目录非空则跳过。
+# 追加新包:把 .tar.gz 丢进 install/conf/freeswitch/sounds/ 即可,自动识别。
+_fs_install_sounds() {
+  install -d -m 0755 "$FS_PREFIX/sounds"
+  local sounds_dir tarball
+  sounds_dir="$(_fs_install_dir)/conf/freeswitch/sounds"
+  if [ ! -d "$sounds_dir" ]; then
+    echo "[freeswitch] $sounds_dir 不存在,跳过 sounds 安装" >&2
+    return 0
+  fi
+  shopt -s nullglob
+  for tarball in "$sounds_dir"/*.tar.gz; do
+    if ! tar -xzf "$tarball" -C "$FS_PREFIX/sounds/"; then
+      echo "[freeswitch] 解压 sounds 失败: $tarball" >&2
+    else
+      echo "[freeswitch] 已安装 sounds: $(basename "$tarball")" >&2
+    fi
+  done
+  shopt -u nullglob
 }
 
 # 在 /usr/bin 建软链,让 freeswitch / fs_cli 命令在 PATH 中直接可用。
@@ -228,6 +249,7 @@ do_install() {
   _fs_check_vars
   _fs_install_deps
   _fs_build_from_source
+  _fs_install_sounds
   _fs_install_symlinks
   _fs_install_conf
   _fs_install_data_links
