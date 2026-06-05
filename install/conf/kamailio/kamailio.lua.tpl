@@ -39,17 +39,30 @@ function ksr_request_route()
         ksr_route_registrar();
     end
 
-    -- 处理二次invite，区分来自fs还是外部
+    -- 处理二次invite (re-INVITE)，区分来自 FS / 网关 / 客户端
     if KSR.is_INVITE() and KSR.siputils.has_totag() > 0 then
         if KSR.dispatcher.ds_is_from_list("1", 3) > 0 then
+            -- FS 发起的 re-INVITE (内 → 外)
             if KSR.is_myself_turi() then
                 if KSR.htable.sht_gete("sips", KSR.pv.gete("$tU")) == "webrtc" then
                     KSR.setflag(WEBRTC_UAS);
                 end
             end
             KSR.setflag(FLT_INT2EXT);
-        else
+        elseif KSR.dispatcher.ds_is_from_list("2", 3) > 0 then
+            -- 上游网关发起的 re-INVITE (外 → 内)
             KSR.setflag(FLT_EXT2INT);
+        elseif KSR.htable.sht_gete("sips", KSR.pv.gete("$fU")) ~= "" then
+            -- 已注册的客户端发起的 re-INVITE (外 → 内)
+            -- WebRTC 走 ws/wss,需保留 DTLS/ICE 改写;软电话走 UDP/TCP
+            if KSR.pv.gete('$proto') == "ws" or KSR.pv.gete('$proto') == "wss" then
+                KSR.setflag(WEBRTC_UAC);
+            end
+            KSR.setflag(FLT_EXT2INT);
+        else
+            -- 陌生来源:不接受 in-dialog INVITE
+            KSR.sl.sl_send_reply(403, "Forbidden");
+            KSR.x.exit();
         end
         ksr_rtp_offer()
         KSR.tm.t_on_branch("ksr_branch_manage");
